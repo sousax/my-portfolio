@@ -92,7 +92,7 @@ function Hero({ onNav }) {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12 }}>プレイヤー 01</span></div>
         <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
-        <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack: já trabalho na área e sigo na faculdade. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
+        <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack na MG Capital e estudo Análise e Desenvolvimento de Sistemas no IFSP. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}><Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button><Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button></div>
         <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} {...(href.startsWith('http') && { target: '_blank', rel: 'noreferrer' })} /></Tooltip>)}</div>
       </div>
@@ -116,9 +116,9 @@ function About() {
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <SectionTitle index="01" kicker="Sobre" jp="プロフィール" title="Perfil do jogador" />
-        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor full-stack: já trabalho na área e continuo na faculdade. Gosto de construir o sistema inteiro, do banco de dados à interface.</p>
-        <p>Entre trabalhos da faculdade e projetos próprios já usei Java, C#, C++, Python e JavaScript, de sistemas MVC a uma IA para conferência logística.</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['Java', 'C#', 'JavaScript', 'TypeScript', 'Python', 'React', 'AdonisJS', 'Tailwind', 'HTML & CSS'].map(t => <Tag key={t}>{t}</Tag>)}</div>
+        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor full-stack na MG Capital, em Santos, e estudo Análise e Desenvolvimento de Sistemas no IFSP. Construo aplicações web e ferramentas internas de ponta a ponta, do back-end à interface.</p>
+        <p>Vim do comércio exterior e da contabilidade, onde comecei a automatizar rotinas com Python, n8n e Power Automate, e cortei em até 80% o tempo de tarefas manuais como o processamento de notas fiscais.</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['Python', 'JavaScript', 'TypeScript', 'C#', 'Java', 'React', 'Angular', 'n8n', 'Power Automate'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · linguagens no GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
