@@ -31,10 +31,10 @@ export function Tag({ children }) {
   return <span className="es-tag">{children}</span>
 }
 
-export function Card({ mediaSlot, children, style, onClick, id }) {
+export function Card({ mediaSlot, children, style, onClick }) {
   const cls = cx('es-card', 'es-card--brackets', onClick && 'es-card--interactive')
   const keys = onClick && { role: 'button', tabIndex: 0, onKeyDown: e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onClick()) }
-  return <div id={id} className={cls} style={style} onClick={onClick} {...keys}>
+  return <div className={cls} style={style} onClick={onClick} {...keys}>
     {mediaSlot && <div className="es-card__media">{mediaSlot}</div>}
     <div className="es-card__body">{children}</div>
   </div>

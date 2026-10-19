@@ -5,6 +5,9 @@ import './components.css'
 const GITHUB_USER = 'sousax'
 const GITHUB_URL = `https://github.com/${GITHUB_USER}`
 const CATS = ['games', 'design']
+// Drop your photo at src/assets/avatar.(jpg|png|webp); resolved at build time, else the GitHub avatar.
+const AVATAR = Object.values(import.meta.glob('./assets/avatar.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }))[0]
+  ?? `https://avatars.githubusercontent.com/${GITHUB_USER}?s=600`
 // ponytail: unauthenticated GitHub API (60 req/h per visitor IP) — cache in localStorage or prebuild to JSON if it ever rate-limits.
 function useQuests() {
   const [state, setState] = useState({ quests: null, error: false })
@@ -37,7 +40,7 @@ const SKILLS = [['React / Next.js', 86, 'mp'], ['TypeScript', 80, 'mp'], ['CSS &
 const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:'], ['briefcase', 'LinkedIn', 'https://linkedin.com/'], ['download', 'Currículo', '#']]
 const ROLES = ['Front-end Developer', 'UI Engineer', 'Game Dev nas horas vagas']
 
-function useTyper(words, speed = 70, hold = 1400) {
+function Typer({ words, speed = 70, hold = 1400 }) {
   const [i, setI] = useState(0), [n, setN] = useState(0), [del, setDel] = useState(false)
   useEffect(() => {
     const w = words[i]
@@ -47,7 +50,7 @@ function useTyper(words, speed = 70, hold = 1400) {
       : setTimeout(() => { setDel(false); setI((i + 1) % words.length) }, 0)
     return () => clearTimeout(t)
   }, [n, del, i, words, speed, hold])
-  return words[i].slice(0, n)
+  return <span className="es-cursor">{words[i].slice(0, n)}</span>
 }
 
 function StartScreen({ onStart }) {
@@ -58,8 +61,8 @@ function StartScreen({ onStart }) {
   }, [onStart])
   return <div onClick={onStart} className="es-scanlines" style={{ position: 'fixed', inset: 0, zIndex: 200, cursor: 'pointer', display: 'grid', placeItems: 'center', background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
-      <span className="es-jp" style={{ color: 'var(--sakura-500)', fontSize: 14 }}>エドゥアルド・ソウザ</span>
-      <h1 style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--violet-300)' }}>Sousa</span></h1>
+      <span className="es-jp" style={{ fontSize: 14 }}>エドゥアルド・ソウザ</span>
+      <h1 style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
       <span className="es-kicker">Portfolio · Ver. 2026</span>
       <div style={{ marginTop: 28, fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: '.12em', color: 'var(--gold-500)', animation: 'es-blink 1.1s steps(1) infinite' }}>▸ PRESS START</div>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>click ou Enter</span>
@@ -68,13 +71,12 @@ function StartScreen({ onStart }) {
 }
 
 function Hero({ onNav }) {
-  const role = useTyper(ROLES)
-  return <section id="top" style={{ position: 'relative', padding: '72px 24px 96px', background: 'var(--bg-aura),var(--bg-pixel-grid)' }}>
-    <div className="hero-grid" style={{ maxWidth: 'var(--container)', margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0,1.25fr) minmax(0,1fr)', gap: 56, alignItems: 'center' }}>
+  return <section id="top" className="es-bg-grid" style={{ padding: '72px 24px 96px' }}>
+    <div className="es-container hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.25fr) minmax(0,1fr)', gap: 56, alignItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'es-pop-in 600ms var(--ease-out) both' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12, color: 'var(--sakura-500)' }}>プレイヤー 01</span></div>
-        <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--violet-300)' }}>Sousa</span></h1>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span style={{ color: 'var(--sakura-500)' }}>&gt; </span><span className="es-cursor">{role}</span></div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12 }}>プレイヤー 01</span></div>
+        <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></div>
         <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Eu crio interfaces rápidas e animadas, com um pé no mundo dos games e dos animes. Escolha uma quest abaixo para ver o que ando construindo.</Dialog></div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}><Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button><Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button></div>
         <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} target="_blank" rel="noreferrer" /></Tooltip>)}</div>
@@ -82,8 +84,7 @@ function Hero({ onNav }) {
       <div style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
         <div style={{ animation: 'es-float 4s var(--ease-snap) infinite' }}>
           <div className="es-card es-card--brackets" style={{ aspectRatio: '4/5', background: 'var(--bg-pixel-grid),var(--surface-sunken)', overflow: 'hidden' }}>
-            {/* Drop a photo at public/avatar.jpg; falls back to the GitHub avatar. */}
-            <img src="/avatar.jpg" alt="Foto de Eduardo Sousa" onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = `${GITHUB_URL}.png?size=600` }} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={AVATAR} alt="Foto de Eduardo Sousa" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         </div>
         <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Front-end Mage</span></div>
@@ -94,16 +95,16 @@ function Hero({ onNav }) {
 }
 
 function About() {
-  return <section id="about" style={{ padding: '96px 24px', borderTop: '1px solid var(--border-subtle)' }}>
-    <div className="two-col" style={{ maxWidth: 'var(--container)', margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
+  return <section id="about" className="es-section">
+    <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <SectionTitle index="01" kicker="Sobre" jp="プロフィール" title="Player profile" />
         <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor front-end e gosto de construir produtos que parecem vivos: transições bem cuidadas, feedback claro e um pouco de personalidade. Cresci entre RPGs, shōnen e fliperama, e isso aparece no que eu desenho.</p>
         <p>Hoje trabalho com React e TypeScript, e no tempo livre faço protótipos de jogos.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['React', 'Next.js', 'TypeScript', 'Tailwind', 'Framer Motion', 'Node', 'Figma', 'Godot'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
-      <Card id="skills">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats</span><span style={{ fontFamily: 'var(--font-pixel)', fontSize: 11, color: 'var(--fg-gold)' }}>XP 6.400 / 10.000</span></div>
+      <Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats</span><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>XP 6.400 / 10.000</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>{SKILLS.map(([l, v, t], i) => <StatBar key={l} label={l} value={v} tone={t} valueText={'LV ' + Math.round(v / 10)} delay={i * 90} />)}</div>
       </Card>
     </div>
@@ -113,19 +114,18 @@ function About() {
 function Quests({ onOpen }) {
   const { quests, error } = useQuests()
   const [tab, setTab] = useState('all')
-  const QUESTS = quests || []
-  const count = c => QUESTS.filter(q => c === 'all' || q.cat === c).length
-  const list = QUESTS.filter(q => tab === 'all' || q.cat === tab)
-  return <section id="quests" style={{ padding: '96px 24px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-pixel-grid)' }}>
-    <div style={{ maxWidth: 'var(--container)', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
+  const pick = c => (quests || []).filter(q => c === 'all' || q.cat === c)
+  const list = pick(tab)
+  return <section id="quests" className="es-section" style={{ background: 'var(--bg-pixel-grid)' }}>
+    <div className="es-container" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
         <SectionTitle index="02" kicker="Quests" jp="クエスト" title="Projetos selecionados" />
-        <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: count(value) }))} />
+        <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length }))} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 20 }}>
         {list.map((q, i) => <div key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
           <Card onClick={() => onOpen(q)} style={{ height: '100%' }} mediaSlot={<img src={q.image} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />}>
-            <div style={{ display: 'flex', gap: 8 }}><Badge tone={q.tone} live={q.live}>{q.status}</Badge><Badge tone="outline">{q.cat}</Badge></div>
+            <div style={{ display: 'flex', gap: 8 }}><Badge tone={q.tone}>{q.status}</Badge><Badge tone="outline">{q.cat}</Badge></div>
             <h3 style={{ fontSize: 20 }}>{q.title}</h3><p style={{ fontSize: 14 }}>{q.desc}</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>{q.stack.map(s => <Tag key={s}>{s}</Tag>)}</div>
           </Card>
@@ -151,8 +151,8 @@ function Contact({ onSent }) {
     setErr(er)
     if (!Object.keys(er).length) { onSent(); setF(EMPTY) }
   }
-  return <section id="contact" style={{ padding: '96px 24px 120px', borderTop: '1px solid var(--border-subtle)' }}>
-    <div style={{ maxWidth: 'var(--container-narrow)', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
+  return <section id="contact" className="es-section" style={{ paddingBottom: 120 }}>
+    <div className="es-container" style={{ maxWidth: 'var(--container-narrow)', display: 'flex', flexDirection: 'column', gap: 32 }}>
       <SectionTitle align="center" index="03" kicker="Contato" jp="コンタクト" title="Pronto para a próxima quest?" description="Freelance, vaga ou só pra conversar sobre o último anime da temporada. Respondo em até 24h." />
       <Card><form noValidate onSubmit={submit} className="two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
         <Input label="Nome" prefix="›" placeholder="Player 2" value={f.name} error={err.name} onChange={set('name')} />
@@ -166,9 +166,9 @@ function Contact({ onSent }) {
 }
 
 function Footer() {
-  return <footer style={{ borderTop: '1px solid var(--border-subtle)', padding: '28px 24px' }}>
-    <div style={{ maxWidth: 'var(--container)', margin: '0 auto', display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>
-      <span>© 2026 Eduardo Sousa</span><span>Feito com <span style={{ color: 'var(--sakura-500)' }}>♥</span> e muito café · <span style={{ color: 'var(--violet-300)' }}>GAME SAVED</span></span>
+  return <footer className="es-section" style={{ padding: '28px 24px' }}>
+    <div className="es-container" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>
+      <span>© 2026 Eduardo Sousa</span><span>Feito com <span style={{ color: 'var(--fg-accent-2)' }}>♥</span> e muito café · <span style={{ color: 'var(--fg-accent)' }}>GAME SAVED</span></span>
     </div>
   </footer>
 }
@@ -181,8 +181,7 @@ export default function App() {
   const [active, setActive] = useState('')
   useEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme }, [theme])
   const go = id => {
-    const el = document.getElementById(id)
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth' })
+    document.getElementById(id)?.scrollIntoView()
     setActive(id)
   }
   const start = useCallback(() => { sessionStorage.setItem('es-started', '1'); setStarted(true) }, [])
