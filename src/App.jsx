@@ -2,15 +2,39 @@ import { useCallback, useEffect, useState } from 'react'
 import { Badge, Button, Card, Checkbox, Dialog, IconButton, Input, NavBar, SectionTitle, Select, StatBar, Tabs, Tag, Textarea, Toast, Tooltip } from './ds.jsx'
 import './components.css'
 
-// ponytail: placeholder content from the design kit — replace with real projects/bio/links.
-const QUESTS = [
-  { id: 1, title: 'Projeto Um', cat: 'web', status: 'Lançado', tone: 'hp', desc: 'Descrição curta do projeto em uma linha.', long: 'Espaço para contar o problema, o que você construiu e o resultado. Substitua por um projeto real.', stack: ['React', 'TypeScript', 'Vite'] },
-  { id: 2, title: 'Projeto Dois', cat: 'games', status: 'In dev', tone: 'gold', live: true, desc: 'Protótipo de jogo 2D feito em Godot.', long: 'Mecânicas, aprendizados e um link para jogar. Substitua por um projeto real.', stack: ['Godot', 'GDScript'] },
-  { id: 3, title: 'Projeto Três', cat: 'web', status: 'Lançado', tone: 'hp', desc: 'Dashboard com animações e tema escuro.', long: 'Detalhes técnicos, papel no time e métricas. Substitua por um projeto real.', stack: ['Next.js', 'Framer Motion'] },
-  { id: 4, title: 'Projeto Quatro', cat: 'design', status: 'Case', tone: 'mana', desc: 'Design system e protótipo navegável.', long: 'Processo de design, pesquisa e entregáveis. Substitua por um projeto real.', stack: ['Figma', 'Tokens'] },
-]
+const GITHUB_USER = 'sousax'
+const GITHUB_URL = `https://github.com/${GITHUB_USER}`
+const CATS = ['games', 'design']
+// ponytail: unauthenticated GitHub API (60 req/h per visitor IP) — cache in localStorage or prebuild to JSON if it ever rate-limits.
+function useQuests() {
+  const [state, setState] = useState({ quests: null, error: false })
+  useEffect(() => {
+    fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`)
+      .then(r => { if (!r.ok) throw r; return r.json() })
+      .then(repos => {
+        const own = repos.filter(r => !r.fork && r.name !== GITHUB_USER)
+        const tagged = own.filter(r => r.topics.includes('portfolio'))
+        // Curate by adding the "portfolio" topic on GitHub; until then show the 6 most recent with a description.
+        const picked = tagged.length ? tagged : own.filter(r => r.description).slice(0, 6)
+        setState({ quests: picked.map((r, i) => ({
+          id: i + 1,
+          title: r.name,
+          cat: CATS.find(c => r.topics.includes(c)) || 'web',
+          status: r.homepage ? 'Online' : 'Código',
+          tone: r.homepage ? 'hp' : 'mana',
+          desc: r.description || 'Sem descrição.',
+          stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t))].filter(Boolean),
+          image: `https://opengraph.githubassets.com/1/${GITHUB_USER}/${r.name}`,
+          url: r.homepage || r.html_url,
+          repo: r.html_url,
+        })), error: false })
+      })
+      .catch(() => setState({ quests: [], error: true }))
+  }, [])
+  return state
+}
 const SKILLS = [['React / Next.js', 86, 'mp'], ['TypeScript', 80, 'mp'], ['CSS & Motion', 90, 'sp'], ['UI Design (Figma)', 72, 'violet'], ['Node.js', 64, 'hp'], ['Godot / Game dev', 48, 'xp']]
-const SOCIALS = [['github', 'GitHub', 'https://github.com/'], ['mail', 'Email', 'mailto:'], ['briefcase', 'LinkedIn', 'https://linkedin.com/'], ['download', 'Currículo', '#']]
+const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:'], ['briefcase', 'LinkedIn', 'https://linkedin.com/'], ['download', 'Currículo', '#']]
 const ROLES = ['Front-end Developer', 'UI Engineer', 'Game Dev nas horas vagas']
 
 function useTyper(words, speed = 70, hold = 1400) {
@@ -57,11 +81,12 @@ function Hero({ onNav }) {
       </div>
       <div style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
         <div style={{ animation: 'es-float 4s var(--ease-snap) infinite' }}>
-          <div className="es-card es-card--brackets" style={{ aspectRatio: '4/5', background: 'var(--bg-pixel-grid),var(--ink-950)', display: 'grid', placeItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)', textAlign: 'center' }}>foto / avatar<br />do Eduardo</span>
+          <div className="es-card es-card--brackets" style={{ aspectRatio: '4/5', background: 'var(--bg-pixel-grid),var(--surface-sunken)', overflow: 'hidden' }}>
+            {/* Drop a photo at public/avatar.jpg; falls back to the GitHub avatar. */}
+            <img src="/avatar.jpg" alt="Foto de Eduardo Sousa" onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = `${GITHUB_URL}.png?size=600` }} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         </div>
-        <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--ink-850)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--gold-500)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Front-end Mage</span></div>
+        <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Front-end Mage</span></div>
         <div style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV 24</div>
       </div>
     </div>
@@ -78,7 +103,7 @@ function About() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['React', 'Next.js', 'TypeScript', 'Tailwind', 'Framer Motion', 'Node', 'Figma', 'Godot'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
       <Card id="skills">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats</span><span style={{ fontFamily: 'var(--font-pixel)', fontSize: 11, color: 'var(--gold-500)' }}>XP 6.400 / 10.000</span></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats</span><span style={{ fontFamily: 'var(--font-pixel)', fontSize: 11, color: 'var(--fg-gold)' }}>XP 6.400 / 10.000</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>{SKILLS.map(([l, v, t], i) => <StatBar key={l} label={l} value={v} tone={t} valueText={'LV ' + Math.round(v / 10)} delay={i * 90} />)}</div>
       </Card>
     </div>
@@ -86,7 +111,9 @@ function About() {
 }
 
 function Quests({ onOpen }) {
+  const { quests, error } = useQuests()
   const [tab, setTab] = useState('all')
+  const QUESTS = quests || []
   const count = c => QUESTS.filter(q => c === 'all' || q.cat === c).length
   const list = QUESTS.filter(q => tab === 'all' || q.cat === tab)
   return <section id="quests" style={{ padding: '96px 24px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-pixel-grid)' }}>
@@ -97,14 +124,15 @@ function Quests({ onOpen }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 20 }}>
         {list.map((q, i) => <div key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
-          <Card onClick={() => onOpen(q)} style={{ height: '100%' }} mediaSlot={<div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'var(--bg-scanlines),var(--ink-950)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-3)' }}>screenshot</div>}>
+          <Card onClick={() => onOpen(q)} style={{ height: '100%' }} mediaSlot={<img src={q.image} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />}>
             <div style={{ display: 'flex', gap: 8 }}><Badge tone={q.tone} live={q.live}>{q.status}</Badge><Badge tone="outline">{q.cat}</Badge></div>
             <h3 style={{ fontSize: 20 }}>{q.title}</h3><p style={{ fontSize: 14 }}>{q.desc}</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>{q.stack.map(s => <Tag key={s}>{s}</Tag>)}</div>
           </Card>
         </div>)}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center' }}><Button variant="ghost" iconRight="external-link" href="https://github.com/" target="_blank" rel="noreferrer">Ver tudo no GitHub</Button></div>
+      {(!quests || error) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{error ? 'Não consegui carregar as quests agora. Veja direto no GitHub.' : 'Carregando quests…'}</p>}
+      <div style={{ display: 'flex', justifyContent: 'center' }}><Button variant="ghost" iconRight="external-link" href={GITHUB_URL} target="_blank" rel="noreferrer">Ver tudo no GitHub</Button></div>
     </div>
   </section>
 }
@@ -167,8 +195,8 @@ export default function App() {
     <main><Hero onNav={go} /><About /><Quests onOpen={setQuest} /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
     <Dialog open={!!quest} speaker={quest && 'Quest #0' + quest.id} title={quest?.title} onClose={closeQuest}
-      footer={<><Button size="sm" variant="ghost" onClick={closeQuest}>Voltar</Button><Button size="sm" iconRight="external-link">Abrir projeto</Button></>}>
-      {quest && <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}><p>{quest.long}</p><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{quest.stack.map(s => <Tag key={s}>{s}</Tag>)}</div></div>}
+      footer={<><Button size="sm" variant="ghost" href={quest?.repo} target="_blank" rel="noreferrer">Código</Button><Button size="sm" iconRight="external-link" href={quest?.url} target="_blank" rel="noreferrer">Abrir projeto</Button></>}>
+      {quest && <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}><p>{quest.desc}</p><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{quest.stack.map(s => <Tag key={s}>{s}</Tag>)}</div></div>}
     </Dialog>
     <div className="es-toast-stack">{toasts.map(id => <ToastItem key={id} id={id} onDone={dropToast} />)}</div>
   </>
