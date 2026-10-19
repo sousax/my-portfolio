@@ -87,4 +87,14 @@ a:hover{color:var(--text-link-hover)}
 .es-section{padding:var(--space-9) 24px;border-top:1px solid var(--border-subtle)}
 .es-container{max-width:var(--container);margin:0 auto}
 section{scroll-margin-top:var(--nav-h)}
-@media (max-width:860px){.hero-grid,.two-col{grid-template-columns:1fr!important}}
+/* Section cadence: Quests (the work) gets the most air; tighter on small screens. */
+.es-section--lead{padding-block:var(--space-10)}
+@media (max-width:860px){
+  .hero-grid,.two-col{grid-template-columns:1fr!important}
+  .es-section,.es-section--lead{padding-block:var(--space-8)}
+  /* Hero: portrait first and smaller so it sits above the fold; chips stay inside the frame. */
+  .hero-photo{order:-1;max-width:240px!important;justify-self:start!important}
+  .hero-chip--class{left:12px!important;bottom:12px!important}
+  .hero-chip--lv{right:12px!important;top:12px!important}
+  #top{padding-top:var(--space-6)!important}
+}

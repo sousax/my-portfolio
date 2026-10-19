@@ -100,7 +100,7 @@
 .es-tab__count{font-family:var(--font-pixel);font-size:10px;color:var(--fg-3)}
 /* ---------- NavBar ---------- */
 .es-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);display:flex;align-items:center;background:color-mix(in srgb,var(--bg-page) 72%,transparent);-webkit-backdrop-filter:var(--blur-glass);backdrop-filter:var(--blur-glass);border-bottom:1px solid var(--border-subtle)}
-.es-nav__inner{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:24px}
+.es-nav__inner{width:100%;max-width:calc(var(--container) + 48px);margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:24px}
 .es-nav__brand{display:flex;align-items:center;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--fg-1);letter-spacing:.02em;text-decoration:none}
 .es-nav__brand:hover{color:var(--fg-1)}
 .es-nav__brand b{color:var(--fg-accent);font-weight:700}
@@ -147,3 +147,6 @@ html:has(.es-modal[open]){overflow:hidden}
 /* ---------- Text resilience ---------- */
 .es-break{overflow-wrap:anywhere}
 .es-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* ---------- Quest cover fallback (no screenshot) ---------- */
+.es-quest-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:24px;background:var(--bg-scanlines),var(--bg-pixel-grid),var(--surface-sunken)}
+.es-card__media img{object-position:top}

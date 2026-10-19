@@ -5,6 +5,9 @@ import './components.css'
 const GITHUB_USER = 'sousax'
 const GITHUB_URL = `https://github.com/${GITHUB_USER}`
 const CATS = ['games', 'design']
+// Committed screenshots in src/assets/quests/<repo>.webp win; otherwise a live capture of the homepage via thum.io.
+const SHOTS = Object.fromEntries(Object.entries(import.meta.glob('./assets/quests/*.webp', { eager: true, import: 'default' }))
+  .map(([path, url]) => [path.split('/').pop().replace(/\.webp$/, ''), url]))
 // Drop your photo at src/assets/avatar.(jpg|png|webp); resolved at build time, else the GitHub avatar.
 const AVATAR = Object.values(import.meta.glob('./assets/avatar.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }))[0]
   ?? `https://avatars.githubusercontent.com/${GITHUB_USER}?s=600`
@@ -65,7 +68,8 @@ function toQuests(repos) {
     tone: r.homepage ? 'hp' : 'mana',
     desc: r.description || 'Sem descrição.',
     stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t))].filter(Boolean),
-    image: `https://opengraph.githubassets.com/1/${GITHUB_USER}/${r.name}`,
+    image: SHOTS[r.name] ?? (r.homepage ? `https://image.thum.io/get/width/800/crop/500/noanimate/${r.homepage}` : null),
+    language: r.language,
     url: r.homepage || r.html_url,
     repo: r.html_url,
   }))
@@ -121,22 +125,27 @@ function Hero({ onNav }) {
   const years = repos?.length ? yearsSince(repos) : null
   return <section id="top" className="es-bg-grid" style={{ padding: '72px 24px 96px' }}>
     <div className="es-container hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.25fr) minmax(0,1fr)', gap: 56, alignItems: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'es-pop-in 600ms var(--ease-out) both' }}>
+      <div className="hero-copy" style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'es-pop-in 600ms var(--ease-out) both' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12 }}>プレイヤー 01</span></div>
-        <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
-        <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack na MG Capital e estudo Análise e Desenvolvimento de Sistemas no IFSP. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}><Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button><Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button></div>
-        <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} {...(href.startsWith('http') && { target: '_blank', rel: 'noreferrer' })} /></Tooltip>)}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
+        </div>
+        <div style={{ maxWidth: 540, marginTop: 8 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack na MG Capital e estudo Análise e Desenvolvimento de Sistemas no IFSP. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+          <Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button>
+          <Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} {...(href.startsWith('http') && { target: '_blank', rel: 'noreferrer' })} /></Tooltip>)}</div>
+        </div>
       </div>
-      <div style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
+      <div className="hero-photo" style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
         <div style={{ animation: 'es-float 4s var(--ease-snap) infinite' }}>
           <div className="es-card es-card--brackets" style={{ aspectRatio: '4/5', background: 'var(--bg-pixel-grid),var(--surface-sunken)', overflow: 'hidden' }}>
             <img src={AVATAR} alt="Foto de Eduardo Sousa" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         </div>
-        <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Full-stack</span>{years && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>{years} {years === 1 ? 'ano' : 'anos'} no GitHub · {repos.length} repos</span>}</div>
-        {years && <div title={`LV = anos desde o primeiro repositório (${years})`} style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV {years}</div>}
+        <div className="hero-chip hero-chip--class" style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Full-stack</span>{years && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>{years} {years === 1 ? 'ano' : 'anos'} no GitHub · {repos.length} repos</span>}</div>
+        {years && <div className="hero-chip hero-chip--lv" title={`LV = anos desde o primeiro repositório (${years})`} style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV {years}</div>}
       </div>
     </div>
   </section>
@@ -165,26 +174,41 @@ function About() {
   </section>
 }
 
-function Quests({ onOpen }) {
+// Screenshot of the project, or a dark title card when there is none / it fails to load.
+function QuestShot({ q }) {
+  const [failed, setFailed] = useState(false)
+  if (q.image && !failed) return <img src={q.image} alt={`Captura de tela de ${q.title}`} loading="lazy" onError={() => setFailed(true)} />
+  return <div className="es-quest-card" aria-hidden>
+    <span className="es-kicker">{q.language || 'Projeto'}</span>
+    <span className="es-break" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color: 'var(--fg-1)' }}>{q.title}</span>
+  </div>
+}
+
+function Quests() {
   const { repos, error, retry } = useRepos()
   const quests = repos && toQuests(repos)
   const [tab, setTab] = useState('all')
   const pick = c => (quests || []).filter(q => c === 'all' || q.cat === c)
   const list = pick(tab)
-  return <section id="quests" className="es-section" style={{ background: 'var(--bg-pixel-grid)' }}>
+  return <section id="quests" className="es-section es-section--lead" style={{ background: 'var(--bg-pixel-grid)' }}>
     <div className="es-container" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
         <SectionTitle index="02" kicker="Quests" jp="クエスト" title="Projetos selecionados" />
         {quests?.length > 0 && <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length })).filter(t => t.value === 'all' || t.count)} />}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 20 }}>
-        {list.map((q, i) => <div key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
-          <Card onClick={() => onOpen(q)} style={{ height: '100%' }} mediaSlot={<img src={q.image} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 24 }}>
+        {list.map((q, i) => <article key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
+          <Card style={{ height: '100%' }} mediaSlot={<QuestShot q={q} />}>
             <div style={{ display: 'flex', gap: 8 }}><Badge tone={q.tone}>{q.status}</Badge><Badge tone="outline">{q.cat}</Badge></div>
-            <h3 className="es-break" style={{ fontSize: 20 }}>{q.title}</h3><p className="es-clamp-3" style={{ fontSize: 14 }}>{q.desc}</p>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>{q.stack.map(s => <Tag key={s}>{s}</Tag>)}</div>
+            <h3 className="es-break" style={{ fontSize: 22 }}>{q.title}</h3>
+            <p className="es-clamp-3" style={{ fontSize: 15 }}>{q.desc}</p>
+            {q.stack.length > 0 && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{q.stack.map(s => <Tag key={s}>{s}</Tag>)}</div>}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 8 }}>
+              {q.url !== q.repo && <Button size="sm" iconRight="external-link" href={q.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${q.title} (nova aba)`}>Abrir projeto</Button>}
+              <Button size="sm" variant="ghost" icon="code" href={q.repo} target="_blank" rel="noreferrer" aria-label={`Código de ${q.title} no GitHub (nova aba)`}>Código</Button>
+            </div>
           </Card>
-        </div>)}
+        </article>)}
       </div>
       {error ? <RepoError error={error} onRetry={retry} />
         : (!quests || !quests.length) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{quests ? 'Nenhum projeto por aqui ainda. Veja tudo no GitHub:' : 'Buscando projetos no GitHub…'}</p>}
@@ -232,7 +256,7 @@ function Contact({ onSent }) {
       setStatus(x.message === 'rate' ? 'rate' : !navigator.onLine ? 'offline' : x.name === 'TimeoutError' ? 'timeout' : 'error')
     }
   }
-  return <section id="contact" className="es-section" style={{ paddingBottom: 120 }}>
+  return <section id="contact" className="es-section">
     <div className="es-container" style={{ maxWidth: 'var(--container-narrow)', display: 'flex', flexDirection: 'column', gap: 32 }}>
       <SectionTitle align="center" index="03" kicker="Contato" jp="コンタクト" title="Pronto para a próxima quest?" description="Freelance, vaga ou só pra conversar sobre o último anime da temporada. Respondo em até 24h." />
       <Card><form noValidate onSubmit={submit} className="two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
@@ -262,7 +286,6 @@ function Footer() {
 export default function App() {
   const [started, setStarted] = useState(() => sessionStorage.getItem('es-started') === '1')
   const [theme, setTheme] = useState('dark')
-  const [quest, setQuest] = useState(null)
   const [toasts, setToasts] = useState([])
   const [active, setActive] = useState('')
   useEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme }, [theme])
@@ -271,18 +294,13 @@ export default function App() {
     setActive(id)
   }
   const start = useCallback(() => { sessionStorage.setItem('es-started', '1'); setStarted(true) }, [])
-  const closeQuest = useCallback(() => setQuest(null), [])
   const dropToast = useCallback(id => setToasts(x => x.filter(y => y !== id)), [])
   return <>
     {!started && <StartScreen onStart={start} />}
     <NavBar links={[{ label: 'Sobre', href: 'about' }, { label: 'Quests', href: 'quests' }, { label: 'Contato', href: 'contact' }]} active={active} onNavigate={go}
       actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label="Alternar tema" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
-    <main><Hero onNav={go} /><About /><Quests onOpen={setQuest} /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
+    <main><Hero onNav={go} /><About /><Quests /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
-    <Dialog open={!!quest} speaker={quest && `Quest ${String(quest.id).padStart(2, '0')}`} title={quest?.title} onClose={closeQuest}
-      footer={<><Button size="sm" variant="ghost" href={quest?.repo} target="_blank" rel="noreferrer">Código</Button><Button size="sm" iconRight="external-link" href={quest?.url} target="_blank" rel="noreferrer">Abrir projeto</Button></>}>
-      {quest && <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}><p>{quest.desc}</p><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{quest.stack.map(s => <Tag key={s}>{s}</Tag>)}</div></div>}
-    </Dialog>
     <div className="es-toast-stack">{toasts.map(id => <ToastItem key={id} id={id} onDone={dropToast} />)}</div>
   </>
 }
