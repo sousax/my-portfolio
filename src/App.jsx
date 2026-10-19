@@ -10,14 +10,47 @@ const AVATAR = Object.values(import.meta.glob('./assets/avatar.{jpg,jpeg,png,web
   ?? `https://avatars.githubusercontent.com/${GITHUB_USER}?s=600`
 // ponytail: unauthenticated GitHub API (60 req/h per visitor IP) — cache in localStorage or prebuild to JSON if it ever rate-limits.
 // One shared request for About (stats) and Quests.
+// Cached per tab for 10 min so reloads don't burn the rate limit.
+const CACHE_KEY = 'gh-repos', CACHE_TTL = 10 * 60 * 1000
 let reposPromise
-const fetchRepos = () => reposPromise ??= fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`)
-  .then(r => { if (!r.ok) throw r; return r.json() })
-  .then(repos => repos.filter(r => !r.fork && r.name !== GITHUB_USER))
+function fetchRepos() {
+  try {
+    const c = JSON.parse(sessionStorage.getItem(CACHE_KEY))
+    if (c && Date.now() - c.t < CACHE_TTL) return reposPromise ??= Promise.resolve(c.repos)
+  } catch { /* storage blocked or corrupt: just fetch */ }
+  return reposPromise ??= fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`, { signal: AbortSignal.timeout(10000) })
+    .then(r => {
+      if (r.status === 403 || r.status === 429) throw new Error('rate')
+      if (!r.ok) throw new Error('http')
+      return r.json()
+    })
+    .then(all => {
+      const repos = all.filter(r => !r.fork && r.name !== GITHUB_USER)
+        .map(({ name, description, language, topics = [], homepage, html_url, created_at }) => ({ name, description, language, topics, homepage, html_url, created_at }))
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), repos })) } catch { /* ignore */ }
+      return repos
+    })
+    .catch(e => { reposPromise = undefined; throw e }) // let the next call retry
+}
 function useRepos() {
-  const [state, setState] = useState({ repos: null, error: false })
-  useEffect(() => { fetchRepos().then(repos => setState({ repos, error: false }), () => setState({ repos: [], error: true })) }, [])
-  return state
+  const [state, setState] = useState({ repos: null, error: null })
+  const load = useCallback(() => {
+    setState({ repos: null, error: null })
+    fetchRepos().then(repos => setState({ repos, error: null }), e => setState({ repos: null, error: e.message === 'rate' ? 'rate' : navigator.onLine ? 'http' : 'offline' }))
+  }, [])
+  useEffect(load, [load])
+  return { ...state, retry: load }
+}
+const REPO_ERRORS = {
+  rate: 'O GitHub limitou as consultas deste navegador por enquanto (60 por hora). Tente de novo em alguns minutos.',
+  offline: 'Parece que você está sem internet. Conecte-se e tente de novo.',
+  http: 'Não consegui falar com o GitHub agora.',
+}
+function RepoError({ error, onRetry }) {
+  return <div role="alert" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>
+    <p>{REPO_ERRORS[error]}</p>
+    <Button size="sm" variant="secondary" icon="reload" onClick={onRetry}>Tentar de novo</Button>
+  </div>
 }
 
 function toQuests(repos) {
@@ -72,15 +105,15 @@ function StartScreen({ onStart }) {
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [onStart])
-  return <div onClick={onStart} className="es-scanlines" style={{ position: 'fixed', inset: 0, zIndex: 200, cursor: 'pointer', display: 'grid', placeItems: 'center', background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
+  return <button type="button" autoFocus onClick={onStart} aria-label="Entrar no portfolio" className="es-scanlines es-start" style={{ background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
+    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
       <span className="es-jp" style={{ fontSize: 14 }}>エドゥアルド・ソウザ</span>
-      <h1 style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
+      <span aria-hidden className="es-start__name" style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></span>
       <span className="es-kicker">Portfolio · Ver. 2026</span>
-      <div style={{ marginTop: 28, fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: '.12em', color: 'var(--gold-500)', animation: 'es-blink 1.1s steps(1) infinite' }}>▸ PRESS START</div>
+      <span style={{ display: 'block', marginTop: 28, fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: '.12em', color: 'var(--gold-500)', animation: 'es-blink 1.1s steps(1) infinite' }}>▸ PRESS START</span>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>clique ou aperte Enter</span>
-    </div>
-  </div>
+    </span>
+  </button>
 }
 
 function Hero({ onNav }) {
@@ -110,7 +143,7 @@ function Hero({ onNav }) {
 }
 
 function About() {
-  const { repos, error } = useRepos()
+  const { repos, error, retry } = useRepos()
   const skills = repos ? toSkills(repos) : []
   return <section id="about" className="es-section">
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
@@ -124,8 +157,8 @@ function About() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · linguagens no GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>
           {skills.map((sk, i) => <StatBar key={sk.lang} label={sk.lang} value={sk.value} tone={sk.tone} valueText={`${sk.n} ${sk.n === 1 ? 'repo' : 'repos'}`} delay={i * 90} />)}
-          {!repos && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Buscando linguagens no GitHub…</p>}
-          {error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Não consegui falar com o GitHub agora. Recarregue a página em instantes.</p>}
+          {!repos && !error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Buscando linguagens no GitHub…</p>}
+          {error && <RepoError error={error} onRetry={retry} />}
         </div>
       </Card>
     </div>
@@ -133,7 +166,7 @@ function About() {
 }
 
 function Quests({ onOpen }) {
-  const { repos, error } = useRepos()
+  const { repos, error, retry } = useRepos()
   const quests = repos && toQuests(repos)
   const [tab, setTab] = useState('all')
   const pick = c => (quests || []).filter(q => c === 'all' || q.cat === c)
@@ -142,18 +175,19 @@ function Quests({ onOpen }) {
     <div className="es-container" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
         <SectionTitle index="02" kicker="Quests" jp="クエスト" title="Projetos selecionados" />
-        <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length }))} />
+        {quests?.length > 0 && <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length })).filter(t => t.value === 'all' || t.count)} />}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 20 }}>
         {list.map((q, i) => <div key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
           <Card onClick={() => onOpen(q)} style={{ height: '100%' }} mediaSlot={<img src={q.image} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />}>
             <div style={{ display: 'flex', gap: 8 }}><Badge tone={q.tone}>{q.status}</Badge><Badge tone="outline">{q.cat}</Badge></div>
-            <h3 style={{ fontSize: 20 }}>{q.title}</h3><p style={{ fontSize: 14 }}>{q.desc}</p>
+            <h3 className="es-break" style={{ fontSize: 20 }}>{q.title}</h3><p className="es-clamp-3" style={{ fontSize: 14 }}>{q.desc}</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>{q.stack.map(s => <Tag key={s}>{s}</Tag>)}</div>
           </Card>
         </div>)}
       </div>
-      {(!quests || error || !quests.length) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{error ? 'Não consegui carregar os projetos agora. Eles estão todos no GitHub:' : quests ? 'Nenhum projeto por aqui ainda. Veja tudo no GitHub:' : 'Buscando projetos no GitHub…'}</p>}
+      {error ? <RepoError error={error} onRetry={retry} />
+        : (!quests || !quests.length) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{quests ? 'Nenhum projeto por aqui ainda. Veja tudo no GitHub:' : 'Buscando projetos no GitHub…'}</p>}
       <div style={{ display: 'flex', justifyContent: 'center' }}><Button variant="ghost" iconRight="external-link" href={GITHUB_URL} target="_blank" rel="noreferrer">Ver tudo no GitHub</Button></div>
     </div>
   </section>
@@ -163,42 +197,54 @@ const FORMSPREE = 'https://formspree.io/f/myekapka'
 const EMAIL = 'eduardomssousa@hotmail.com'
 const SUBJECTS = ['Projeto freelance', 'Vaga full-time', 'Só dizer oi']
 const EMPTY = { name: '', email: '', subject: SUBJECTS[0], msg: '' }
+const SEND_ERRORS = {
+  error: 'Não consegui enviar agora.',
+  timeout: 'O envio demorou demais e foi cancelado.',
+  offline: 'Parece que você está sem internet.',
+  rate: 'Muitas mensagens em pouco tempo. Espere alguns minutos e tente de novo.',
+}
 function Contact({ onSent }) {
   const [f, setF] = useState(EMPTY), [err, setErr] = useState({}), [status, setStatus] = useState('idle')
   const set = k => e => setF({ ...f, [k]: e.target.value })
   const submit = async e => {
     e.preventDefault()
+    const form = e.currentTarget
+    if (status === 'sending') return
     const er = {}
     if (!f.name.trim()) er.name = 'Diga seu nome, viajante'
-    if (!/^\S+@\S+\.\S+$/.test(f.email)) er.email = 'Esse email não parece válido'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) er.email = 'Esse email não parece válido. Confira se tem @ e domínio, ex.: voce@email.com'
     if (!f.msg.trim()) er.msg = 'Escreva uma mensagem'
     setErr(er)
-    if (Object.keys(er).length) return
+    const first = Object.keys(er)[0]
+    if (first) { form.elements[first].focus(); return }
     setStatus('sending')
     try {
       const r = await fetch(FORMSPREE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name: f.name, email: f.email, _subject: `[Portfolio] ${f.subject}`, assunto: f.subject, message: f.msg }),
+        body: JSON.stringify({ name: f.name.trim(), email: f.email.trim(), _subject: `[Portfolio] ${f.subject}`, assunto: f.subject, message: f.msg.trim(), _gotcha: form.elements._gotcha.value }),
+        signal: AbortSignal.timeout(15000),
       })
-      if (!r.ok) throw r
+      if (!r.ok) throw new Error(r.status === 429 ? 'rate' : 'http')
       setStatus('idle'); setF(EMPTY); onSent()
-    } catch {
-      setStatus('error') // keep what they typed so they can retry
+    } catch (x) {
+      // keep what they typed so they can retry
+      setStatus(x.message === 'rate' ? 'rate' : !navigator.onLine ? 'offline' : x.name === 'TimeoutError' ? 'timeout' : 'error')
     }
   }
   return <section id="contact" className="es-section" style={{ paddingBottom: 120 }}>
     <div className="es-container" style={{ maxWidth: 'var(--container-narrow)', display: 'flex', flexDirection: 'column', gap: 32 }}>
       <SectionTitle align="center" index="03" kicker="Contato" jp="コンタクト" title="Pronto para a próxima quest?" description="Freelance, vaga ou só pra conversar sobre o último anime da temporada. Respondo em até 24h." />
       <Card><form noValidate onSubmit={submit} className="two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-        <Input label="Nome" prefix="›" placeholder="Player 2" autoComplete="name" value={f.name} error={err.name} onChange={set('name')} />
-        <Input label="Email" type="email" placeholder="voce@email.com" autoComplete="email" value={f.email} error={err.email} onChange={set('email')} />
-        <div style={{ gridColumn: '1/-1' }}><Select label="Assunto" options={SUBJECTS} value={f.subject} onChange={set('subject')} /></div>
-        <div style={{ gridColumn: '1/-1' }}><Textarea label="Mensagem" placeholder="Conte sobre sua quest…" value={f.msg} error={err.msg} onChange={set('msg')} /></div>
-        {status === 'error' && <p role="alert" className="es-help es-help--error" style={{ gridColumn: '1/-1', fontSize: 14 }}>Não consegui enviar agora. Tente de novo em instantes ou escreva direto para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>}
+        <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden className="sr-only" />
+        <Input label="Nome" name="name" maxLength={100} prefix="›" placeholder="Player 2" autoComplete="name" value={f.name} error={err.name} onChange={set('name')} />
+        <Input label="Email" name="email" maxLength={254} type="email" placeholder="voce@email.com" autoComplete="email" value={f.email} error={err.email} onChange={set('email')} />
+        <div style={{ gridColumn: '1/-1' }}><Select label="Assunto" name="subject" options={SUBJECTS} value={f.subject} onChange={set('subject')} /></div>
+        <div style={{ gridColumn: '1/-1' }}><Textarea label="Mensagem" name="msg" maxLength={5000} placeholder="Conte sobre sua quest…" value={f.msg} error={err.msg} onChange={set('msg')} /></div>
+        {SEND_ERRORS[status] && <p role="alert" className="es-help es-help--error" style={{ gridColumn: '1/-1', fontSize: 14 }}>{SEND_ERRORS[status]} Sua mensagem continua aqui; se preferir, escreva direto para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>}
         <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Currículo: <a href={CV_PT} download>Português</a> · <a href={CV_EN} download>English</a></span>
-          <Button type="submit" icon="mail" disabled={status === 'sending'}>{status === 'sending' ? 'Enviando…' : 'Enviar mensagem'}</Button>
+          <Button type="submit" icon="mail" aria-disabled={status === 'sending' || undefined}>{status === 'sending' ? 'Enviando…' : 'Enviar mensagem'}</Button>
         </div>
       </form></Card>
     </div>

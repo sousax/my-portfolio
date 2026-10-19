@@ -1,5 +1,5 @@
 // Design-system primitives (Eduardo Sousa DS, claude.ai/design). Styles in components.css.
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 
 const cx = (...a) => a.filter(Boolean).join(' ')
 const ICON_BASE = 'https://unpkg.com/pixelarticons@1.8.1/svg/'
@@ -61,20 +61,20 @@ export function SectionTitle({ index, kicker, jp, title, description, align }) {
 }
 
 function Field({ label, error, children }) {
-  const id = useId()
+  const id = useId(), errId = id + '-err'
   return <div className="es-field">
     <label className="es-label" htmlFor={id}>{label}</label>
-    <div className={cx('es-control', error && 'es-control--error')}>{children(id)}</div>
-    {error && <span className="es-help es-help--error">{error}</span>}
+    <div className={cx('es-control', error && 'es-control--error')}>{children(id, error ? errId : undefined)}</div>
+    {error && <span id={errId} className="es-help es-help--error">{error}</span>}
   </div>
 }
 export function Input({ label, error, prefix, ...rest }) {
-  return <Field label={label} error={error}>{id => <>
-    {prefix && <span className="es-control__prefix">{prefix}</span>}<input id={id} className="es-input" aria-invalid={!!error} {...rest} />
+  return <Field label={label} error={error}>{(id, errId) => <>
+    {prefix && <span aria-hidden className="es-control__prefix">{prefix}</span>}<input id={id} className="es-input" aria-invalid={!!error} aria-describedby={errId} {...rest} />
   </>}</Field>
 }
 export function Textarea({ label, error, ...rest }) {
-  return <Field label={label} error={error}>{id => <textarea id={id} rows={5} className="es-input es-textarea" aria-invalid={!!error} {...rest} />}</Field>
+  return <Field label={label} error={error}>{(id, errId) => <textarea id={id} rows={5} className="es-input es-textarea" aria-invalid={!!error} aria-describedby={errId} {...rest} />}</Field>
 }
 export function Select({ label, options, ...rest }) {
   return <Field label={label}>{id => <>
@@ -106,22 +106,25 @@ export function NavBar({ links, active, actions, onNavigate }) {
 }
 
 export function Dialog({ open = true, speaker, title, children, footer, onClose, inline, showNext }) {
+  const ref = useRef(null)
+  // Native modal gives focus trap, Esc and an inert page; we return focus to the opener ourselves.
   useEffect(() => {
-    if (!open || inline) return
-    const k = e => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', k)
-    return () => window.removeEventListener('keydown', k)
-  }, [open, inline, onClose])
+    const d = ref.current
+    if (!open || inline || !d) return
+    const opener = document.activeElement
+    d.showModal()
+    return () => { d.close(); opener?.focus?.() }
+  }, [open, inline])
   if (!open) return null
-  const box = <div className={cx('es-dialog', inline && 'es-dialog--inline')} role={inline ? undefined : 'dialog'} aria-modal={!inline || undefined} onClick={e => e.stopPropagation()}>
+  const box = <div className={cx('es-dialog', inline && 'es-dialog--inline')}>
     {speaker && <div className="es-dialog__plate">{speaker}</div>}
     {onClose && <IconButton className="es-dialog__close" icon="close" label="Fechar" variant="ghost" size="sm" onClick={onClose} />}
-    <div className="es-dialog__body">{title && <div className="es-dialog__title">{title}</div>}<div className="es-dialog__text">{children}</div></div>
+    <div className="es-dialog__body">{title && <h2 className="es-dialog__title">{title}</h2>}<div className="es-dialog__text">{children}</div></div>
     {footer && <div className="es-dialog__footer">{footer}</div>}
-    {showNext && <span className="es-dialog__next">▼</span>}
+    {showNext && <span aria-hidden className="es-dialog__next">▼</span>}
   </div>
   if (inline) return box
-  return <div className="es-dialog-backdrop" onClick={onClose}>{box}</div>
+  return <dialog ref={ref} className="es-modal" aria-label={title} onCancel={e => { e.preventDefault(); onClose() }} onClick={e => e.target === e.currentTarget && onClose()}>{box}</dialog>
 }
 
 export function Toast({ title, description, onClose }) {

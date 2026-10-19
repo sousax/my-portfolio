@@ -113,12 +113,15 @@
 .es-nav__actions{display:flex;align-items:center;gap:8px}
 @media (max-width:760px){.es-nav__links{display:none}.es-nav__actions{margin-left:auto}}
 /* ---------- Dialog (JRPG text box) ---------- */
-.es-dialog-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:24px;background:var(--surface-overlay);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:es-pop-in var(--dur-fast) var(--ease-out)}
-.es-dialog{position:relative;width:100%;max-width:560px;max-height:calc(100vh - 48px);overflow:auto;background:var(--surface-card);color:var(--fg-2);border:2px solid var(--violet-200);border-radius:var(--radius-2);box-shadow:inset 0 0 0 4px var(--surface-card),inset 0 0 0 6px var(--violet-700),var(--shadow-pixel);animation:es-pop-in var(--dur-base) var(--ease-bounce)}
+.es-modal{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:24px;border:0;background:transparent;color:inherit;overflow:auto}
+.es-modal[open]{display:grid;place-items:center;animation:es-pop-in var(--dur-fast) var(--ease-out)}
+.es-modal::backdrop{background:rgba(7,4,13,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+html:has(.es-modal[open]){overflow:hidden}
+.es-dialog{position:relative;width:100%;max-width:560px;background:var(--surface-card);color:var(--fg-2);border:2px solid var(--violet-200);border-radius:var(--radius-2);box-shadow:inset 0 0 0 4px var(--surface-card),inset 0 0 0 6px var(--violet-700),var(--shadow-pixel);animation:es-pop-in var(--dur-base) var(--ease-bounce)}
 .es-dialog--inline{animation:none;overflow:visible}
 .es-dialog__plate{position:absolute;top:-14px;left:20px;padding:4px 12px;background:var(--violet-500);color:#fff;font-family:var(--font-pixel);font-size:11px;letter-spacing:var(--tracking-pixel);text-transform:uppercase;box-shadow:var(--shadow-pixel-violet)}
-.es-dialog__body{padding:30px 28px 24px;display:flex;flex-direction:column;gap:14px}
-.es-dialog__title{font-family:var(--font-display);font-weight:700;font-size:24px;color:var(--fg-1)}
+.es-dialog__body{padding:30px 28px 24px;display:flex;flex-direction:column;gap:14px;max-height:calc(100dvh - 180px);overflow:auto}
+.es-dialog__title{font-family:var(--font-display);font-weight:700;font-size:24px;color:var(--fg-1);margin:0;padding-right:28px;overflow-wrap:anywhere}
 .es-dialog__text{font-size:16px;line-height:1.65;color:var(--fg-2)}
 .es-dialog__footer{display:flex;justify-content:flex-end;gap:10px;padding:0 28px 24px}
 .es-dialog__close{position:absolute;top:12px;right:12px}
@@ -136,3 +139,11 @@
 .es-tooltip{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,4px);padding:6px 10px;background:var(--violet-50);color:var(--ink-900);font-family:var(--font-mono);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none;opacity:0;box-shadow:var(--shadow-pixel-violet);transition:opacity var(--dur-fast),transform var(--dur-fast) var(--ease-snap);z-index:60}
 .es-tooltip::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;border:5px solid transparent;border-top-color:var(--violet-50)}
 .es-tooltip-wrap:hover .es-tooltip,.es-tooltip-wrap:focus-within .es-tooltip{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- Start screen ---------- */
+.es-start{position:fixed;inset:0;z-index:200;display:grid;place-items:center;width:100%;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.es-start__name{display:block;font-family:var(--font-display);font-weight:700;color:var(--fg-1)}
+.es-start:focus-visible{outline-offset:-8px}
+/* ---------- Text resilience ---------- */
+.es-break{overflow-wrap:anywhere}
+.es-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
