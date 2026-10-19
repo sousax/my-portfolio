@@ -197,3 +197,12 @@ html:has(.es-modal[open]){overflow:hidden}
 .es-btn--primary:focus-visible,.es-btn--sakura:focus-visible{outline-color:#fff}
 /* The start screen is always the dark CRT, whatever the page theme. */
 .es-start{--fg-1:#F3EEFF;--fg-3:#9A8CBD;--fg-accent:var(--violet-300);--fg-accent-2:var(--sakura-500)}
+/* Start screen controls */
+.es-start{cursor:pointer}
+.es-start__press{margin-top:28px;padding:10px 16px;background:none;border:0;cursor:pointer;font-family:var(--font-pixel);font-size:18px;letter-spacing:.12em;color:var(--gold-500)}
+.es-start__press:focus-visible{outline:2px solid var(--gold-500);outline-offset:4px}
+.es-start__skip{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;background:none;border:1px solid var(--border-subtle);color:var(--fg-3);font-family:var(--font-mono);font-size:13px;cursor:pointer}
+.es-start__skip:hover{color:var(--fg-1);border-color:var(--violet-400)}
+.es-start__skip kbd{font:inherit;font-size:11px;padding:1px 6px;border:1px solid currentColor;border-radius:2px;opacity:.8}
+.hero-chip__sub{display:block;margin-top:4px;font-family:var(--font-mono);font-size:11px;letter-spacing:0;text-transform:none;opacity:.85}
+.es-cv a{display:inline-block;padding:12px 4px}

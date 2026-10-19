@@ -103,7 +103,7 @@ input,textarea{caret-color:var(--fg-accent-2)}
 .es-container{max-width:var(--container);margin:0 auto}
 section{scroll-margin-top:var(--nav-h)}
 /* Section cadence: Quests (the work) gets the most air; tighter on small screens. */
-.es-section--lead{padding-block:var(--space-10)}
+.es-section--lead{padding-block:var(--space-9) var(--space-10)}
 @media (max-width:860px){
   .hero-grid,.two-col{grid-template-columns:1fr!important}
   .es-section,.es-section--lead{padding-block:var(--space-8)}

@@ -4,7 +4,7 @@ import './components.css'
 
 const GITHUB_USER = 'sousax'
 const GITHUB_URL = `https://github.com/${GITHUB_USER}`
-const CATS = ['games', 'design']
+const CATS = ['sistemas', 'games', 'design']
 // Committed screenshots in src/assets/quests/<repo>.webp win; otherwise a live capture of the homepage via thum.io.
 const SHOTS = Object.fromEntries(Object.entries(import.meta.glob('./assets/quests/*.webp', { eager: true, import: 'default' }))
   .map(([path, url]) => [path.split('/').pop().replace(/\.webp$/, ''), url]))
@@ -56,6 +56,10 @@ function RepoError({ error, onRetry }) {
   </div>
 }
 
+// GitHub topics are slugs; show them as people write them.
+const TOPIC_LABELS = { ia: 'IA', automacao: 'Automação', adonisjs: 'AdonisJS', react: 'React', tailwind: 'Tailwind', estudo: 'Estudo', nodejs: 'Node.js', typescript: 'TypeScript', javascript: 'JavaScript' }
+const topicLabel = t => TOPIC_LABELS[t] ?? t.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase())
+
 function toQuests(repos) {
   const tagged = repos.filter(r => r.topics.includes('portfolio'))
   // Curate by adding the "portfolio" topic on GitHub; until then show the 6 most recent with a description.
@@ -67,7 +71,7 @@ function toQuests(repos) {
     status: r.homepage ? 'Online' : 'Código',
     tone: r.homepage ? 'hp' : 'mana',
     desc: r.description || 'Sem descrição.',
-    stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t))].filter(Boolean),
+    stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t)).map(topicLabel)].filter(Boolean),
     image: SHOTS[r.name] ?? (r.homepage ? `https://image.thum.io/get/width/800/crop/500/noanimate/${r.homepage}` : null),
     language: r.language,
     url: r.homepage || r.html_url,
@@ -121,22 +125,29 @@ function Typer({ words, running, speed = 70, hold = 1400 }) {
 function StartScreen({ onPress, onStart }) {
   const [off, setOff] = useState(false)
   const press = useCallback(() => { setOff(true); onPress() }, [onPress])
+  const skip = useCallback(() => { onPress(); onStart() }, [onPress, onStart])
   useEffect(() => {
-    const k = e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), press())
+    const k = e => {
+      if (e.key === 'Escape') skip()
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); press() }
+    }
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
-  }, [press])
+  }, [press, skip])
   // Safety net in case animationend never fires (e.g. backgrounded tab).
   useEffect(() => { if (off) { const t = setTimeout(onStart, 700); return () => clearTimeout(t) } }, [off, onStart])
-  return <button type="button" autoFocus onClick={press} onAnimationEnd={e => off && e.target === e.currentTarget && onStart()} aria-label="Entrar no portfolio" className={'es-scanlines es-start' + (off ? ' es-start--off' : '')} style={{ background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
-    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
+  return <div onClick={press} onAnimationEnd={e => off && e.target === e.currentTarget && onStart()} className={'es-scanlines es-start' + (off ? ' es-start--off' : '')} style={{ background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
       <span className="es-jp" style={{ fontSize: 14 }}>エドゥアルド・ソウザ</span>
       <span aria-hidden className="es-start__name" style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></span>
       <span className="es-kicker">Portfolio · Ver. 2026</span>
-      <span style={{ display: 'block', marginTop: 28, fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: '.12em', color: 'var(--gold-500)', animation: 'es-blink 1.1s steps(1) infinite' }}>▸ PRESS START</span>
+      <button type="button" autoFocus className="es-start__press" onClick={e => { e.stopPropagation(); press() }}>
+        <span aria-hidden style={{ animation: 'es-blink 1.1s steps(1) infinite' }}>▸ </span>PRESS START
+      </button>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>clique ou aperte Enter</span>
-    </span>
-  </button>
+    </div>
+    <button type="button" className="es-start__skip" onClick={e => { e.stopPropagation(); skip() }}>Pular intro <kbd>Esc</kbd></button>
+  </div>
 }
 
 function Hero({ onNav, entered }) {
@@ -165,7 +176,7 @@ function Hero({ onNav, entered }) {
           </div>
         </div>
         <div className="hero-chip hero-chip--class" style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Full-stack</span>{years && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>{years} {years === 1 ? 'ano' : 'anos'} no GitHub · {repos.length} repos</span>}</div>
-        {years && <div className="hero-chip hero-chip--lv" title={`LV = anos desde o primeiro repositório (${years})`} style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV {years}</div>}
+        {years && <div className="hero-chip hero-chip--lv" title={`LV = anos desde o primeiro repositório (${years})`} style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV {years}<span className="hero-chip__sub">anos de código</span></div>}
       </div>
     </div>
   </section>
@@ -181,8 +192,8 @@ function About() {
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <SectionTitle index="01" kicker="Sobre" jp="プロフィール" title="Perfil do jogador" />
-        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor full-stack na MG Capital, em Santos, e estudo Análise e Desenvolvimento de Sistemas no IFSP. Construo aplicações web e ferramentas internas de ponta a ponta, do back-end à interface.</p>
-        <p>Vim do comércio exterior e da contabilidade, onde comecei a automatizar rotinas com Python, n8n e Power Automate, e cortei em até 80% o tempo de tarefas manuais como o processamento de notas fiscais.</p>
+        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Comecei pelo técnico em Redes no SENAI e passei pela contabilidade e pelo comércio exterior. Foi automatizando essas rotinas com Python, n8n e Power Automate que cortei em até 80% o tempo de tarefas manuais, como o processamento de notas fiscais.</p>
+        <p>Hoje, na MG Capital, em Santos, construo aplicações web e ferramentas internas de ponta a ponta, do back-end à interface.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['Python', 'JavaScript', 'TypeScript', 'C#', 'Java', 'React', 'Angular', 'n8n', 'Power Automate'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
       <Card>
@@ -217,7 +228,7 @@ function Quests() {
     <div className="es-container" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
         <SectionTitle index="02" kicker="Quests" jp="クエスト" title="Projetos selecionados" />
-        {quests?.length > 0 && <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length })).filter(t => t.value === 'all' || t.count)} />}
+        {new Set(quests?.map(q => q.cat)).size > 1 && <Tabs value={tab} onChange={setTab} items={[['all', 'Todos'], ['web', 'Web'], ['sistemas', 'Sistemas'], ['games', 'Games'], ['design', 'Design']].map(([value, label]) => ({ value, label, count: pick(value).length })).filter(t => t.value === 'all' || t.count)} />}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 24 }}>
         {list.map((q, i) => <article key={q.id} style={{ animation: `es-pop-in 400ms var(--ease-out) ${i * 60}ms both` }}>
@@ -290,7 +301,7 @@ function Contact({ onSent }) {
         <div style={{ gridColumn: '1/-1' }}><Textarea label="Mensagem" name="msg" maxLength={5000} placeholder="Conte sobre sua quest…" value={f.msg} error={err.msg} onChange={set('msg')} /></div>
         {SEND_ERRORS[status] && <p role="alert" className="es-help es-help--error" style={{ gridColumn: '1/-1', fontSize: 14 }}>{SEND_ERRORS[status]} Sua mensagem continua aqui; se preferir, escreva direto para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>}
         <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Currículo: <a href={CV_PT} download>Português</a> · <a href={CV_EN} download>English</a></span>
+          <span className="es-cv" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Currículo: <a href={CV_PT} download>Português</a> · <a href={CV_EN} download>English</a></span>
           <Button type="submit" icon="mail" aria-disabled={status === 'sending' || undefined}>{status === 'sending' ? 'Enviando…' : 'Enviar mensagem'}</Button>
         </div>
       </form></Card>
@@ -315,6 +326,12 @@ export default function App() {
   })
   const [toasts, setToasts] = useState([])
   const [active, setActive] = useState('')
+  // Highlight the section under the header while scrolling.
+  useEffect(() => {
+    const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && setActive(e.target.id)), { rootMargin: '-45% 0px -50% 0px' })
+    ;['top', 'about', 'quests', 'contact'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el) })
+    return () => io.disconnect()
+  }, [])
   useEffect(() => {
     document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme
     try { localStorage.setItem('es-theme', theme) } catch { /* storage blocked */ }
