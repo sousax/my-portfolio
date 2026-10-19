@@ -9,34 +9,43 @@ const CATS = ['games', 'design']
 const AVATAR = Object.values(import.meta.glob('./assets/avatar.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }))[0]
   ?? `https://avatars.githubusercontent.com/${GITHUB_USER}?s=600`
 // ponytail: unauthenticated GitHub API (60 req/h per visitor IP) — cache in localStorage or prebuild to JSON if it ever rate-limits.
-function useQuests() {
-  const [state, setState] = useState({ quests: null, error: false })
-  useEffect(() => {
-    fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`)
-      .then(r => { if (!r.ok) throw r; return r.json() })
-      .then(repos => {
-        const own = repos.filter(r => !r.fork && r.name !== GITHUB_USER)
-        const tagged = own.filter(r => r.topics.includes('portfolio'))
-        // Curate by adding the "portfolio" topic on GitHub; until then show the 6 most recent with a description.
-        const picked = tagged.length ? tagged : own.filter(r => r.description).slice(0, 6)
-        setState({ quests: picked.map((r, i) => ({
-          id: i + 1,
-          title: r.name,
-          cat: CATS.find(c => r.topics.includes(c)) || 'web',
-          status: r.homepage ? 'Online' : 'Código',
-          tone: r.homepage ? 'hp' : 'mana',
-          desc: r.description || 'Sem descrição.',
-          stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t))].filter(Boolean),
-          image: `https://opengraph.githubassets.com/1/${GITHUB_USER}/${r.name}`,
-          url: r.homepage || r.html_url,
-          repo: r.html_url,
-        })), error: false })
-      })
-      .catch(() => setState({ quests: [], error: true }))
-  }, [])
+// One shared request for About (stats) and Quests.
+let reposPromise
+const fetchRepos = () => reposPromise ??= fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`)
+  .then(r => { if (!r.ok) throw r; return r.json() })
+  .then(repos => repos.filter(r => !r.fork && r.name !== GITHUB_USER))
+function useRepos() {
+  const [state, setState] = useState({ repos: null, error: false })
+  useEffect(() => { fetchRepos().then(repos => setState({ repos, error: false }), () => setState({ repos: [], error: true })) }, [])
   return state
 }
-const SKILLS = [['React / Next.js', 86, 'mp'], ['TypeScript', 80, 'mp'], ['CSS & Motion', 90, 'sp'], ['UI Design (Figma)', 72, 'violet'], ['Node.js', 64, 'hp'], ['Godot / Game dev', 48, 'xp']]
+
+function toQuests(repos) {
+  const tagged = repos.filter(r => r.topics.includes('portfolio'))
+  // Curate by adding the "portfolio" topic on GitHub; until then show the 6 most recent with a description.
+  const picked = tagged.length ? tagged : repos.filter(r => r.description).slice(0, 6)
+  return picked.map((r, i) => ({
+    id: i + 1,
+    title: r.name,
+    cat: CATS.find(c => r.topics.includes(c)) || 'web',
+    status: r.homepage ? 'Online' : 'Código',
+    tone: r.homepage ? 'hp' : 'mana',
+    desc: r.description || 'Sem descrição.',
+    stack: [r.language, ...r.topics.filter(t => t !== 'portfolio' && t !== 'web' && !CATS.includes(t))].filter(Boolean),
+    image: `https://opengraph.githubassets.com/1/${GITHUB_USER}/${r.name}`,
+    url: r.homepage || r.html_url,
+    repo: r.html_url,
+  }))
+}
+
+// Stats = primary language of each public repo; the most used language fills the bar, LV = repo count.
+const TONES = ['mp', 'sp', 'violet', 'hp', 'xp', 'mp']
+function toSkills(repos) {
+  const count = {}
+  for (const r of repos) if (r.language) count[r.language] = (count[r.language] || 0) + 1
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
+  return top.map(([lang, n], i) => ({ lang, n, value: Math.round(n / top[0][1] * 100), tone: TONES[i] }))
+}
 const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:'], ['briefcase', 'LinkedIn', 'https://linkedin.com/'], ['download', 'Currículo', '#']]
 const ROLES = ['Front-end Developer', 'UI Engineer', 'Game Dev nas horas vagas']
 
@@ -95,6 +104,8 @@ function Hero({ onNav }) {
 }
 
 function About() {
+  const { repos, error } = useRepos()
+  const skills = repos ? toSkills(repos) : []
   return <section id="about" className="es-section">
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -104,15 +115,20 @@ function About() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['React', 'Next.js', 'TypeScript', 'Tailwind', 'Framer Motion', 'Node', 'Figma', 'Godot'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
       <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats</span><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>XP 6.400 / 10.000</span></div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>{SKILLS.map(([l, v, t], i) => <StatBar key={l} label={l} value={v} tone={t} valueText={'LV ' + Math.round(v / 10)} delay={i * 90} />)}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>
+          {skills.map((sk, i) => <StatBar key={sk.lang} label={sk.lang} value={sk.value} tone={sk.tone} valueText={`LV ${sk.n}`} delay={i * 90} />)}
+          {!repos && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Carregando stats…</p>}
+          {error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Não consegui carregar os stats do GitHub agora.</p>}
+        </div>
       </Card>
     </div>
   </section>
 }
 
 function Quests({ onOpen }) {
-  const { quests, error } = useQuests()
+  const { repos, error } = useRepos()
+  const quests = repos && toQuests(repos)
   const [tab, setTab] = useState('all')
   const pick = c => (quests || []).filter(q => c === 'all' || q.cat === c)
   const list = pick(tab)
