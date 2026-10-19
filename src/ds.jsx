@@ -40,7 +40,7 @@ export function Card({ mediaSlot, children, style, onClick }) {
   </div>
 }
 
-const TONES = { violet: 'var(--violet-400)', hp: 'var(--stat-hp)', mp: 'var(--stat-mp)', xp: 'var(--stat-xp)', sp: 'var(--stat-sp)' }
+const TONES = { violet: 'var(--stat-violet)', hp: 'var(--stat-hp)', mp: 'var(--stat-mp)', xp: 'var(--stat-xp)', sp: 'var(--stat-sp)' }
 export function StatBar({ label, value, tone = 'violet', valueText, delay = 0 }) {
   const c = TONES[tone]
   return <div className="es-stat">

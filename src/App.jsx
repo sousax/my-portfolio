@@ -308,10 +308,17 @@ function Footer() {
 
 export default function App() {
   const [started, setStarted] = useState(() => sessionStorage.getItem('es-started') === '1')
-  const [theme, setTheme] = useState('dark')
+  // Saved choice first, then the OS preference.
+  const [theme, setTheme] = useState(() => {
+    try { const t = localStorage.getItem('es-theme'); if (t === 'light' || t === 'dark') return t } catch { /* storage blocked */ }
+    return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  })
   const [toasts, setToasts] = useState([])
   const [active, setActive] = useState('')
-  useEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme }, [theme])
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme
+    try { localStorage.setItem('es-theme', theme) } catch { /* storage blocked */ }
+  }, [theme])
   const go = id => {
     document.getElementById(id)?.scrollIntoView()
     setActive(id)
@@ -324,7 +331,7 @@ export default function App() {
   return <>
     {!started && <StartScreen onPress={enter} onStart={start} />}
     <NavBar links={[{ label: 'Sobre', href: 'about' }, { label: 'Quests', href: 'quests' }, { label: 'Contato', href: 'contact' }]} active={active} onNavigate={go}
-      actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label="Alternar tema" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
+      actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
     <main><Hero onNav={go} entered={entered} /><About /><Quests /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
     <div className="es-toast-stack">{toasts.map(id => <ToastItem key={id} id={id} onDone={dropToast} />)}</div>
