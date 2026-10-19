@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge, Button, Card, Dialog, IconButton, Input, NavBar, SectionTitle, Select, StatBar, Tabs, Tag, Textarea, Toast, Tooltip } from './ds.jsx'
 import './components.css'
 
@@ -90,26 +90,45 @@ const CV_EN = `${import.meta.env.BASE_URL}resume-eduardo-sousa.pdf`
 const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:eduardomssousa@hotmail.com'], ['briefcase', 'LinkedIn', 'https://www.linkedin.com/in/edusousax/'], ['download', 'Currículo (PDF)', CV_PT]]
 const ROLES = ['Desenvolvedor full-stack', 'Java, C# e JavaScript', 'Front-end em evolução']
 
-function Typer({ words, speed = 70, hold = 1400 }) {
-  const [i, setI] = useState(0), [n, setN] = useState(0), [del, setDel] = useState(false)
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// True while the element is on screen; loops pause and reveals wait for it.
+function useInView(threshold = 0) {
+  const ref = useRef(null), [inView, setInView] = useState(false)
   useEffect(() => {
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold })
+    io.observe(ref.current)
+    return () => io.disconnect()
+  }, [threshold])
+  return [ref, inView]
+}
+
+function Typer({ words, running, speed = 70, hold = 1400 }) {
+  const [i, setI] = useState(0), [n, setN] = useState(0), [del, setDel] = useState(false)
+  const still = reducedMotion()
+  useEffect(() => {
+    if (!running || still) return
     const w = words[i]
     const t = !del && n < w.length ? setTimeout(() => setN(n + 1), speed)
       : !del ? setTimeout(() => setDel(true), hold)
       : n > 0 ? setTimeout(() => setN(n - 1), speed / 2)
       : setTimeout(() => { setDel(false); setI((i + 1) % words.length) }, 0)
     return () => clearTimeout(t)
-  }, [n, del, i, words, speed, hold])
-  return <span className="es-cursor">{words[i].slice(0, n)}</span>
+  }, [n, del, i, words, speed, hold, running, still])
+  return <span className="es-cursor">{still ? words[0] : words[i].slice(0, n)}</span>
 }
 
-function StartScreen({ onStart }) {
+function StartScreen({ onPress, onStart }) {
+  const [off, setOff] = useState(false)
+  const press = useCallback(() => { setOff(true); onPress() }, [onPress])
   useEffect(() => {
-    const k = e => (e.key === 'Enter' || e.key === ' ') && onStart()
+    const k = e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), press())
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
-  }, [onStart])
-  return <button type="button" autoFocus onClick={onStart} aria-label="Entrar no portfolio" className="es-scanlines es-start" style={{ background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
+  }, [press])
+  // Safety net in case animationend never fires (e.g. backgrounded tab).
+  useEffect(() => { if (off) { const t = setTimeout(onStart, 700); return () => clearTimeout(t) } }, [off, onStart])
+  return <button type="button" autoFocus onClick={press} onAnimationEnd={e => off && e.target === e.currentTarget && onStart()} aria-label="Entrar no portfolio" className={'es-scanlines es-start' + (off ? ' es-start--off' : '')} style={{ background: 'var(--bg-aura),var(--bg-pixel-grid),var(--ink-950)' }}>
     <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, textAlign: 'center', padding: 24 }}>
       <span className="es-jp" style={{ fontSize: 14 }}>エドゥアルド・ソウザ</span>
       <span aria-hidden className="es-start__name" style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></span>
@@ -120,16 +139,17 @@ function StartScreen({ onStart }) {
   </button>
 }
 
-function Hero({ onNav }) {
+function Hero({ onNav, entered }) {
   const { repos } = useRepos()
+  const [ref, inView] = useInView()
   const years = repos?.length ? yearsSince(repos) : null
-  return <section id="top" className="es-bg-grid" style={{ padding: '72px 24px 96px' }}>
+  return <section id="top" ref={ref} className={'es-bg-grid' + (inView ? '' : ' is-paused')} style={{ padding: '72px 24px 96px' }}>
     <div className="es-container hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.25fr) minmax(0,1fr)', gap: 56, alignItems: 'center' }}>
-      <div className="hero-copy" style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'es-pop-in 600ms var(--ease-out) both' }}>
+      <div className={'hero-copy' + (entered ? ' is-entered' : '')} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12 }}>プレイヤー 01</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} running={entered && inView} /></span></div>
         </div>
         <div style={{ maxWidth: 540, marginTop: 8 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack na MG Capital e estudo Análise e Desenvolvimento de Sistemas no IFSP. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
@@ -139,7 +159,7 @@ function Hero({ onNav }) {
         </div>
       </div>
       <div className="hero-photo" style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
-        <div style={{ animation: 'es-float 4s var(--ease-snap) infinite' }}>
+        <div className="hero-float">
           <div className="es-card es-card--brackets" style={{ aspectRatio: '4/5', background: 'var(--bg-pixel-grid),var(--surface-sunken)', overflow: 'hidden' }}>
             <img src={AVATAR} alt="Foto de Eduardo Sousa" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
@@ -154,6 +174,9 @@ function Hero({ onNav }) {
 function About() {
   const { repos, error, retry } = useRepos()
   const skills = repos ? toSkills(repos) : []
+  const [statsRef, statsSeen] = useInView(0.3)
+  const [revealed, setRevealed] = useState(false)
+  useEffect(() => { if (statsSeen) setRevealed(true) }, [statsSeen])
   return <section id="about" className="es-section">
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -164,7 +187,7 @@ function About() {
       </div>
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · linguagens no GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>
+        <div ref={statsRef} className={'es-stats' + (revealed ? ' is-revealed' : '')} style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>
           {skills.map((sk, i) => <StatBar key={sk.lang} label={sk.lang} value={sk.value} tone={sk.tone} valueText={`${sk.n} ${sk.n === 1 ? 'repo' : 'repos'}`} delay={i * 90} />)}
           {!repos && !error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Buscando linguagens no GitHub…</p>}
           {error && <RepoError error={error} onRetry={retry} />}
@@ -293,13 +316,16 @@ export default function App() {
     document.getElementById(id)?.scrollIntoView()
     setActive(id)
   }
+  // The hero starts entering on PRESS START, while the CRT switches off over it.
+  const [entered, setEntered] = useState(started)
+  const enter = useCallback(() => setEntered(true), [])
   const start = useCallback(() => { sessionStorage.setItem('es-started', '1'); setStarted(true) }, [])
   const dropToast = useCallback(id => setToasts(x => x.filter(y => y !== id)), [])
   return <>
-    {!started && <StartScreen onStart={start} />}
+    {!started && <StartScreen onPress={enter} onStart={start} />}
     <NavBar links={[{ label: 'Sobre', href: 'about' }, { label: 'Quests', href: 'quests' }, { label: 'Contato', href: 'contact' }]} active={active} onNavigate={go}
       actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label="Alternar tema" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
-    <main><Hero onNav={go} /><About /><Quests /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
+    <main><Hero onNav={go} entered={entered} /><About /><Quests /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
     <div className="es-toast-stack">{toasts.map(id => <ToastItem key={id} id={id} onDone={dropToast} />)}</div>
   </>

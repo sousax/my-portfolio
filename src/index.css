@@ -67,7 +67,14 @@
 @keyframes es-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes es-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 @keyframes es-pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(130,71,245,.5)}50%{box-shadow:0 0 0 8px rgba(130,71,245,0)}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Reduced motion: no loops and no travel; short fades and color changes still confirm state. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-iteration-count:1!important;scroll-behavior:auto!important}
+  .hero-float,.es-badge__dot,.es-cursor::after,.es-dialog__next,.es-scanlines::after,.es-start [style*="es-blink"]{animation:none!important}
+  .es-stat__fill,.es-card,.es-toast,.es-modal[open],.es-dialog,[style*="es-pop-in"]{animation-duration:1ms!important}
+  .es-card--interactive:hover,.es-iconbtn:hover,.es-btn:active{transform:none!important}
+  .es-btn--primary:hover::after{animation:none}
+}
 *,*::before,*::after{box-sizing:border-box}
 html{color-scheme:dark;scroll-behavior:smooth}
 body{margin:0;background:var(--bg-page);color:var(--text-body);font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-normal);-webkit-font-smoothing:antialiased}

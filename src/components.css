@@ -170,3 +170,25 @@ html:has(.es-modal[open]){overflow:hidden}
 /* ---------- Quest cover fallback (no screenshot) ---------- */
 .es-quest-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:24px;background:var(--bg-scanlines),var(--bg-pixel-grid),var(--surface-sunken)}
 .es-card__media img{object-position:top}
+/* ---------- Motion ---------- */
+/* Focal moment: PRESS START switches the CRT off and reveals the site behind it. */
+@keyframes es-crt-off{
+  0%{transform:scale(1,1);filter:brightness(1)}
+  45%{transform:scale(1,.006);filter:brightness(4)}
+  75%{transform:scale(.25,.006);filter:brightness(4);opacity:1}
+  100%{transform:scale(0,0);filter:brightness(4);opacity:0}
+}
+.es-start--off{animation:es-crt-off 460ms cubic-bezier(.55,0,.75,.2) forwards;pointer-events:none}
+.hero-copy.is-entered{animation:es-pop-in 600ms var(--ease-out) 120ms both}
+.hero-float{animation:es-float 4s var(--ease-snap) infinite}
+/* Nonessential loops stop while the hero is off screen. */
+.is-paused .hero-float,.is-paused .es-badge__dot,.is-paused .es-dialog__next{animation-play-state:paused}
+/* Stat bars fill when the card scrolls into view, not on page load. */
+.es-stats .es-stat__fill{animation-play-state:paused}
+.es-stats.is-revealed .es-stat__fill{animation-play-state:running}
+@media (prefers-reduced-motion:reduce){
+  .es-start--off{animation:es-fade-out 160ms ease-out forwards}
+  .hero-copy.is-entered{animation:es-fade-in 200ms ease-out both}
+}
+@keyframes es-fade-out{to{opacity:0}}
+@keyframes es-fade-in{from{opacity:0}}
