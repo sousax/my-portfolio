@@ -45,7 +45,7 @@ export function StatBar({ label, value, tone = 'violet', valueText, delay = 0 })
   const c = TONES[tone]
   return <div className="es-stat">
     <div className="es-stat__row"><span className="es-stat__label">{label}</span><span className="es-stat__value">{valueText}</span></div>
-    <div className="es-stat__track" role="progressbar" aria-valuenow={value} aria-valuemax={100} aria-label={label}>
+    <div className="es-stat__track" role="progressbar" aria-valuenow={value} aria-valuemax={100} aria-valuetext={valueText} aria-label={label}>
       <div className="es-stat__fill" style={{ width: `calc(${value}% - 4px)`, background: c, boxShadow: `0 0 10px ${c}`, animationDelay: delay + 'ms' }} />
     </div>
   </div>

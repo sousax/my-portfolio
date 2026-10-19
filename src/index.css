@@ -83,6 +83,7 @@ a:hover{color:var(--text-link-hover)}
 .es-scanlines{position:relative}
 .es-scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--bg-scanlines);animation:es-scan 1.2s linear infinite}
 .es-cursor::after{content:"_";color:var(--fg-accent-2);animation:es-blink 1s steps(1) infinite;margin-left:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .es-section{padding:var(--space-9) 24px;border-top:1px solid var(--border-subtle)}
 .es-container{max-width:var(--container);margin:0 auto}
 section{scroll-margin-top:var(--nav-h)}

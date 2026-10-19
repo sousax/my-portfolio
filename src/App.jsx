@@ -38,6 +38,8 @@ function toQuests(repos) {
   }))
 }
 
+const yearsSince = repos => Math.max(1, Math.floor((Date.now() - Math.min(...repos.map(r => Date.parse(r.created_at)))) / 31557600000))
+
 // Stats = primary language of each public repo; the most used language fills the bar, LV = repo count.
 const TONES = ['mp', 'sp', 'violet', 'hp', 'xp', 'mp']
 function toSkills(repos) {
@@ -46,8 +48,9 @@ function toSkills(repos) {
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
   return top.map(([lang, n], i) => ({ lang, n, value: Math.round(n / top[0][1] * 100), tone: TONES[i] }))
 }
-const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:'], ['briefcase', 'LinkedIn', 'https://linkedin.com/'], ['download', 'Currículo', '#']]
-const ROLES = ['Front-end Developer', 'UI Engineer', 'Game Dev nas horas vagas']
+// Add ['mail', 'Email', 'mailto:you@…'], ['briefcase', 'LinkedIn', 'https://linkedin.com/in/…'], ['download', 'Currículo', '/curriculo.pdf'] once real.
+const SOCIALS = [['github', 'GitHub', GITHUB_URL]]
+const ROLES = ['Desenvolvedor full-stack', 'Java, C# e JavaScript', 'Front-end em evolução']
 
 function Typer({ words, speed = 70, hold = 1400 }) {
   const [i, setI] = useState(0), [n, setN] = useState(0), [del, setDel] = useState(false)
@@ -74,19 +77,21 @@ function StartScreen({ onStart }) {
       <h1 style={{ fontSize: 'clamp(48px,9vw,104px)', lineHeight: .9, letterSpacing: '-.02em', color: 'var(--fg-1)' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
       <span className="es-kicker">Portfolio · Ver. 2026</span>
       <div style={{ marginTop: 28, fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: '.12em', color: 'var(--gold-500)', animation: 'es-blink 1.1s steps(1) infinite' }}>▸ PRESS START</div>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>click ou Enter</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>clique ou aperte Enter</span>
     </div>
   </div>
 }
 
 function Hero({ onNav }) {
+  const { repos } = useRepos()
+  const years = repos?.length ? yearsSince(repos) : null
   return <section id="top" className="es-bg-grid" style={{ padding: '72px 24px 96px' }}>
     <div className="es-container hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.25fr) minmax(0,1fr)', gap: 56, alignItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'es-pop-in 600ms var(--ease-out) both' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><Badge tone="hp" live>Disponível para projetos</Badge><span className="es-jp" style={{ fontSize: 12 }}>プレイヤー 01</span></div>
         <h1 style={{ fontSize: 'clamp(52px,7vw,88px)', lineHeight: .92, letterSpacing: '-.02em' }}>Eduardo<br /><span style={{ color: 'var(--fg-accent)' }}>Sousa</span></h1>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></div>
-        <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Eu crio interfaces rápidas e animadas, com um pé no mundo dos games e dos animes. Escolha uma quest abaixo para ver o que ando construindo.</Dialog></div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
+        <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack: já trabalho na área e sigo na faculdade. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}><Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button><Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button></div>
         <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} target="_blank" rel="noreferrer" /></Tooltip>)}</div>
       </div>
@@ -96,8 +101,8 @@ function Hero({ onNav }) {
             <img src={AVATAR} alt="Foto de Eduardo Sousa" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         </div>
-        <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Front-end Mage</span></div>
-        <div style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV 24</div>
+        <div style={{ position: 'absolute', left: -28, bottom: 48, padding: '10px 14px', background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-pixel-violet)', display: 'flex', flexDirection: 'column', gap: 2 }}><span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>Class</span><span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--fg-1)' }}>Full-stack</span>{years && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>{years} {years === 1 ? 'ano' : 'anos'} no GitHub · {repos.length} repos</span>}</div>
+        {years && <div title={`LV = anos desde o primeiro repositório (${years})`} style={{ position: 'absolute', right: -18, top: 36, padding: '8px 12px', background: 'var(--violet-500)', color: '#fff', fontFamily: 'var(--font-pixel)', fontSize: 13, letterSpacing: '.1em', boxShadow: 'var(--shadow-pixel)' }}>LV {years}</div>}
       </div>
     </div>
   </section>
@@ -109,17 +114,17 @@ function About() {
   return <section id="about" className="es-section">
     <div className="es-container two-col" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 56 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <SectionTitle index="01" kicker="Sobre" jp="プロフィール" title="Player profile" />
-        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor front-end e gosto de construir produtos que parecem vivos: transições bem cuidadas, feedback claro e um pouco de personalidade. Cresci entre RPGs, shōnen e fliperama, e isso aparece no que eu desenho.</p>
-        <p>Hoje trabalho com React e TypeScript, e no tempo livre faço protótipos de jogos.</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['React', 'Next.js', 'TypeScript', 'Tailwind', 'Framer Motion', 'Node', 'Figma', 'Godot'].map(t => <Tag key={t}>{t}</Tag>)}</div>
+        <SectionTitle index="01" kicker="Sobre" jp="プロフィール" title="Perfil do jogador" />
+        <p style={{ fontSize: 18, lineHeight: 1.7 }}>Sou desenvolvedor full-stack: já trabalho na área e continuo na faculdade. Gosto de construir o sistema inteiro, do banco de dados à interface.</p>
+        <p>Entre trabalhos da faculdade e projetos próprios já usei Java, C#, C++, Python e JavaScript, de sistemas MVC a uma IA para conferência logística.</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{['Java', 'C#', 'JavaScript', 'TypeScript', 'Python', 'React', 'AdonisJS', 'Tailwind', 'HTML & CSS'].map(t => <Tag key={t}>{t}</Tag>)}</div>
       </div>
       <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="es-kicker">Stats · linguagens no GitHub</span>{repos && <span className="es-kicker" style={{ color: 'var(--fg-gold)' }}>{repos.length} repos</span>}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 8 }}>
-          {skills.map((sk, i) => <StatBar key={sk.lang} label={sk.lang} value={sk.value} tone={sk.tone} valueText={`LV ${sk.n}`} delay={i * 90} />)}
-          {!repos && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Carregando stats…</p>}
-          {error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Não consegui carregar os stats do GitHub agora.</p>}
+          {skills.map((sk, i) => <StatBar key={sk.lang} label={sk.lang} value={sk.value} tone={sk.tone} valueText={`${sk.n} ${sk.n === 1 ? 'repo' : 'repos'}`} delay={i * 90} />)}
+          {!repos && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Buscando linguagens no GitHub…</p>}
+          {error && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Não consegui falar com o GitHub agora. Recarregue a página em instantes.</p>}
         </div>
       </Card>
     </div>
@@ -147,7 +152,7 @@ function Quests({ onOpen }) {
           </Card>
         </div>)}
       </div>
-      {(!quests || error) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{error ? 'Não consegui carregar as quests agora. Veja direto no GitHub.' : 'Carregando quests…'}</p>}
+      {(!quests || error || !quests.length) && <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>{error ? 'Não consegui carregar os projetos agora. Eles estão todos no GitHub:' : quests ? 'Nenhum projeto por aqui ainda. Veja tudo no GitHub:' : 'Buscando projetos no GitHub…'}</p>}
       <div style={{ display: 'flex', justifyContent: 'center' }}><Button variant="ghost" iconRight="external-link" href={GITHUB_URL} target="_blank" rel="noreferrer">Ver tudo no GitHub</Button></div>
     </div>
   </section>
@@ -209,7 +214,7 @@ export default function App() {
       actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label="Alternar tema" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
     <main><Hero onNav={go} /><About /><Quests onOpen={setQuest} /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
-    <Dialog open={!!quest} speaker={quest && 'Quest #0' + quest.id} title={quest?.title} onClose={closeQuest}
+    <Dialog open={!!quest} speaker={quest && `Quest ${String(quest.id).padStart(2, '0')}`} title={quest?.title} onClose={closeQuest}
       footer={<><Button size="sm" variant="ghost" href={quest?.repo} target="_blank" rel="noreferrer">Código</Button><Button size="sm" iconRight="external-link" href={quest?.url} target="_blank" rel="noreferrer">Abrir projeto</Button></>}>
       {quest && <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}><p>{quest.desc}</p><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{quest.stack.map(s => <Tag key={s}>{s}</Tag>)}</div></div>}
     </Dialog>
