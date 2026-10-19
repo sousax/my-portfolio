@@ -48,8 +48,8 @@ function toSkills(repos) {
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
   return top.map(([lang, n], i) => ({ lang, n, value: Math.round(n / top[0][1] * 100), tone: TONES[i] }))
 }
-const CV_PT = '/curriculo-eduardo-sousa.pdf'
-const CV_EN = '/resume-eduardo-sousa.pdf'
+const CV_PT = `${import.meta.env.BASE_URL}curriculo-eduardo-sousa.pdf`
+const CV_EN = `${import.meta.env.BASE_URL}resume-eduardo-sousa.pdf`
 const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:eduardomssousa@hotmail.com'], ['briefcase', 'LinkedIn', 'https://www.linkedin.com/in/edusousax/'], ['download', 'Currículo (PDF)', CV_PT]]
 const ROLES = ['Desenvolvedor full-stack', 'Java, C# e JavaScript', 'Front-end em evolução']
 
