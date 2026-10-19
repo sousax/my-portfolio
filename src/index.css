@@ -98,3 +98,8 @@ section{scroll-margin-top:var(--nav-h)}
   .hero-chip--lv{right:12px!important;top:12px!important}
   #top{padding-top:var(--space-6)!important}
 }
+/* Phones in landscape: short viewport, so the portrait goes back beside the copy. */
+@media (max-width:860px) and (orientation:landscape) and (min-width:600px){
+  .hero-grid{grid-template-columns:minmax(0,1fr) 200px!important;gap:32px!important}
+  .hero-photo{order:0;max-width:200px!important;justify-self:end!important}
+}

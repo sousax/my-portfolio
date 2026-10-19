@@ -95,14 +95,19 @@ export function Tabs({ items, value, onChange }) {
 
 export function NavBar({ links, active, actions, onNavigate }) {
   const go = v => e => { e.preventDefault(); onNavigate(v) }
-  return <nav className="es-nav"><div className="es-nav__inner">
-    <a className="es-nav__brand es-cursor" href="#top" onClick={go('top')}>Eduardo<b>.sousa</b></a>
-    <div className="es-nav__links">{links.map((l, i) =>
-      <a key={l.href} href={'#' + l.href} className={cx('es-nav__link', active === l.href && 'es-nav__link--active')} onClick={go(l.href)}>
-        <span className="es-nav__num">{String(i + 1).padStart(2, '0')}.</span>{l.label}
-      </a>)}</div>
-    <div className="es-nav__actions">{actions}</div>
-  </div></nav>
+  const items = cls => links.map((l, i) =>
+    <a key={l.href} href={'#' + l.href} aria-current={active === l.href ? 'location' : undefined} className={cx(cls, active === l.href && cls + '--active')} onClick={go(l.href)}>
+      <span className="es-nav__num">{String(i + 1).padStart(2, '0')}.</span>{l.label}
+    </a>)
+  return <>
+    <nav className="es-nav" aria-label="Principal"><div className="es-nav__inner">
+      <a className="es-nav__brand es-cursor" href="#top" onClick={go('top')}>Eduardo<b>.sousa</b></a>
+      <div className="es-nav__links">{items('es-nav__link')}</div>
+      <div className="es-nav__actions">{actions}</div>
+    </div></nav>
+    {/* Phones: same links as a thumb-reach bar at the bottom (outside .es-nav, whose backdrop-filter would trap position:fixed). */}
+    <nav className="es-tabbar" aria-label="Seções">{items('es-tabbar__link')}</nav>
+  </>
 }
 
 export function Dialog({ open = true, speaker, title, children, footer, onClose, inline, showNext }) {
