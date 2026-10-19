@@ -48,8 +48,8 @@ function toSkills(repos) {
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
   return top.map(([lang, n], i) => ({ lang, n, value: Math.round(n / top[0][1] * 100), tone: TONES[i] }))
 }
-// Add ['mail', 'Email', 'mailto:you@…'], ['briefcase', 'LinkedIn', 'https://linkedin.com/in/…'], ['download', 'Currículo', '/curriculo.pdf'] once real.
-const SOCIALS = [['github', 'GitHub', GITHUB_URL]]
+// Add ['download', 'Currículo', '/curriculo.pdf'] once the PDF is in public/.
+const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:eduardomssousa@hotmail.com'], ['briefcase', 'LinkedIn', 'https://www.linkedin.com/in/edusousax/']]
 const ROLES = ['Desenvolvedor full-stack', 'Java, C# e JavaScript', 'Front-end em evolução']
 
 function Typer({ words, speed = 70, hold = 1400 }) {
@@ -93,7 +93,7 @@ function Hero({ onNav }) {
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--fg-1)', minHeight: 28 }}><span className="sr-only">{ROLES.join(', ')}</span><span aria-hidden><span style={{ color: 'var(--fg-accent-2)' }}>&gt; </span><Typer words={ROLES} /></span></div>
         <div style={{ maxWidth: 540, marginTop: 12 }}><Dialog inline speaker="Eduardo" showNext>Olá! Sou desenvolvedor full-stack: já trabalho na área e sigo na faculdade. Escolha uma quest abaixo para ver o que já construí.</Dialog></div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}><Button size="lg" icon="play" onClick={() => onNav('quests')}>Ver quests</Button><Button size="lg" variant="secondary" onClick={() => onNav('contact')}>Fale comigo</Button></div>
-        <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} target="_blank" rel="noreferrer" /></Tooltip>)}</div>
+        <div style={{ display: 'flex', gap: 8 }}>{SOCIALS.map(([i, l, href]) => <Tooltip key={i} content={l}><IconButton icon={i} label={l} href={href} {...(href.startsWith('http') && { target: '_blank', rel: 'noreferrer' })} /></Tooltip>)}</div>
       </div>
       <div style={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 400 }}>
         <div style={{ animation: 'es-float 4s var(--ease-snap) infinite' }}>
