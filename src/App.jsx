@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Button, Card, Checkbox, Dialog, IconButton, Input, NavBar, SectionTitle, Select, StatBar, Tabs, Tag, Textarea, Toast, Tooltip } from './ds.jsx'
+import { Badge, Button, Card, Dialog, IconButton, Input, NavBar, SectionTitle, Select, StatBar, Tabs, Tag, Textarea, Toast, Tooltip } from './ds.jsx'
 import './components.css'
 
 const GITHUB_USER = 'sousax'
@@ -48,8 +48,9 @@ function toSkills(repos) {
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
   return top.map(([lang, n], i) => ({ lang, n, value: Math.round(n / top[0][1] * 100), tone: TONES[i] }))
 }
-// Add ['download', 'Currículo', '/curriculo.pdf'] once the PDF is in public/.
-const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:eduardomssousa@hotmail.com'], ['briefcase', 'LinkedIn', 'https://www.linkedin.com/in/edusousax/']]
+const CV_PT = '/curriculo-eduardo-sousa.pdf'
+const CV_EN = '/resume-eduardo-sousa.pdf'
+const SOCIALS = [['github', 'GitHub', GITHUB_URL], ['mail', 'Email', 'mailto:eduardomssousa@hotmail.com'], ['briefcase', 'LinkedIn', 'https://www.linkedin.com/in/edusousax/'], ['download', 'Currículo (PDF)', CV_PT]]
 const ROLES = ['Desenvolvedor full-stack', 'Java, C# e JavaScript', 'Front-end em evolução']
 
 function Typer({ words, speed = 70, hold = 1400 }) {
@@ -158,29 +159,47 @@ function Quests({ onOpen }) {
   </section>
 }
 
-const EMPTY = { name: '', email: '', msg: '' }
+const FORMSPREE = 'https://formspree.io/f/myekapka'
+const EMAIL = 'eduardomssousa@hotmail.com'
+const SUBJECTS = ['Projeto freelance', 'Vaga full-time', 'Só dizer oi']
+const EMPTY = { name: '', email: '', subject: SUBJECTS[0], msg: '' }
 function Contact({ onSent }) {
-  const [f, setF] = useState(EMPTY), [err, setErr] = useState({})
+  const [f, setF] = useState(EMPTY), [err, setErr] = useState({}), [status, setStatus] = useState('idle')
   const set = k => e => setF({ ...f, [k]: e.target.value })
-  // ponytail: no backend yet — form only validates and shows the toast. Wire to Formspree/EmailJS/API to actually send.
-  const submit = e => {
+  const submit = async e => {
     e.preventDefault()
     const er = {}
     if (!f.name.trim()) er.name = 'Diga seu nome, viajante'
     if (!/^\S+@\S+\.\S+$/.test(f.email)) er.email = 'Esse email não parece válido'
     if (!f.msg.trim()) er.msg = 'Escreva uma mensagem'
     setErr(er)
-    if (!Object.keys(er).length) { onSent(); setF(EMPTY) }
+    if (Object.keys(er).length) return
+    setStatus('sending')
+    try {
+      const r = await fetch(FORMSPREE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ name: f.name, email: f.email, _subject: `[Portfolio] ${f.subject}`, assunto: f.subject, message: f.msg }),
+      })
+      if (!r.ok) throw r
+      setStatus('idle'); setF(EMPTY); onSent()
+    } catch {
+      setStatus('error') // keep what they typed so they can retry
+    }
   }
   return <section id="contact" className="es-section" style={{ paddingBottom: 120 }}>
     <div className="es-container" style={{ maxWidth: 'var(--container-narrow)', display: 'flex', flexDirection: 'column', gap: 32 }}>
       <SectionTitle align="center" index="03" kicker="Contato" jp="コンタクト" title="Pronto para a próxima quest?" description="Freelance, vaga ou só pra conversar sobre o último anime da temporada. Respondo em até 24h." />
       <Card><form noValidate onSubmit={submit} className="two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-        <Input label="Nome" prefix="›" placeholder="Player 2" value={f.name} error={err.name} onChange={set('name')} />
-        <Input label="Email" type="email" placeholder="voce@email.com" value={f.email} error={err.email} onChange={set('email')} />
-        <div style={{ gridColumn: '1/-1' }}><Select label="Assunto" options={['Projeto freelance', 'Vaga full-time', 'Só dizer oi']} /></div>
+        <Input label="Nome" prefix="›" placeholder="Player 2" autoComplete="name" value={f.name} error={err.name} onChange={set('name')} />
+        <Input label="Email" type="email" placeholder="voce@email.com" autoComplete="email" value={f.email} error={err.email} onChange={set('email')} />
+        <div style={{ gridColumn: '1/-1' }}><Select label="Assunto" options={SUBJECTS} value={f.subject} onChange={set('subject')} /></div>
         <div style={{ gridColumn: '1/-1' }}><Textarea label="Mensagem" placeholder="Conte sobre sua quest…" value={f.msg} error={err.msg} onChange={set('msg')} /></div>
-        <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}><Checkbox label="Receber uma cópia" defaultChecked /><Button type="submit" icon="mail">Enviar mensagem</Button></div>
+        {status === 'error' && <p role="alert" className="es-help es-help--error" style={{ gridColumn: '1/-1', fontSize: 14 }}>Não consegui enviar agora. Tente de novo em instantes ou escreva direto para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>}
+        <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Currículo: <a href={CV_PT} download>Português</a> · <a href={CV_EN} download>English</a></span>
+          <Button type="submit" icon="mail" disabled={status === 'sending'}>{status === 'sending' ? 'Enviando…' : 'Enviar mensagem'}</Button>
+        </div>
       </form></Card>
     </div>
   </section>
