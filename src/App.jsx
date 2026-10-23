@@ -253,6 +253,15 @@ function Quests() {
 
 const FORMSPREE = 'https://formspree.io/f/myekapka'
 const EMAIL = 'eduardomssousa@hotmail.com'
+// Cloudflare test key (always passes). Swap for the real site key; the secret goes in Formspree's form settings.
+const TURNSTILE_KEY = '0x4AAAAAAFi77z9ISDARxUad'
+let turnstileLoad
+const loadTurnstile = () => turnstileLoad ??= new Promise((ok, fail) => {
+  const s = document.createElement('script')
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+  s.onload = ok; s.onerror = fail
+  document.head.append(s)
+})
 const SUBJECTS = ['Projeto freelance', 'Vaga full-time', 'Só dizer oi']
 const EMPTY = { name: '', email: '', subject: SUBJECTS[0], msg: '' }
 const SEND_ERRORS = {
@@ -261,8 +270,16 @@ const SEND_ERRORS = {
   offline: 'Parece que você está sem internet.',
   rate: 'Muitas mensagens em pouco tempo. Espere alguns minutos e tente de novo.',
 }
-function Contact({ onSent }) {
+function Contact({ onSent, theme }) {
   const [f, setF] = useState(EMPTY), [err, setErr] = useState({}), [status, setStatus] = useState('idle')
+  const captcha = useRef(null), widget = useRef()
+  useEffect(() => {
+    let gone = false
+    loadTurnstile().then(() => {
+      if (!gone) widget.current = window.turnstile.render(captcha.current, { sitekey: TURNSTILE_KEY, theme, language: 'pt-br' })
+    }).catch(() => { turnstileLoad = undefined })
+    return () => { gone = true; if (widget.current !== undefined) window.turnstile.remove(widget.current); widget.current = undefined }
+  }, [theme])
   const set = k => e => setF({ ...f, [k]: e.target.value })
   const submit = async e => {
     e.preventDefault()
@@ -272,15 +289,17 @@ function Contact({ onSent }) {
     if (!f.name.trim()) er.name = 'Diga seu nome, viajante'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) er.email = 'Esse email não parece válido. Confira se tem @ e domínio, ex.: voce@email.com'
     if (!f.msg.trim()) er.msg = 'Escreva uma mensagem'
+    const token = widget.current !== undefined && window.turnstile.getResponse(widget.current)
+    if (!token) er.captcha = 'Confirme que você não é um robô antes de enviar.'
     setErr(er)
     const first = Object.keys(er)[0]
-    if (first) { form.elements[first].focus(); return }
+    if (first) { form.elements[first]?.focus(); return }
     setStatus('sending')
     try {
       const r = await fetch(FORMSPREE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name: f.name.trim(), email: f.email.trim(), _subject: `[Portfolio] ${f.subject}`, assunto: f.subject, message: f.msg.trim(), _gotcha: form.elements._gotcha.value }),
+        body: JSON.stringify({ name: f.name.trim(), email: f.email.trim(), _subject: `[Portfolio] ${f.subject}`, assunto: f.subject, message: f.msg.trim(), _gotcha: form.elements._gotcha.value, 'cf-turnstile-response': token }),
         signal: AbortSignal.timeout(15000),
       })
       if (!r.ok) throw new Error(r.status === 429 ? 'rate' : 'http')
@@ -288,6 +307,8 @@ function Contact({ onSent }) {
     } catch (x) {
       // keep what they typed so they can retry
       setStatus(x.message === 'rate' ? 'rate' : !navigator.onLine ? 'offline' : x.name === 'TimeoutError' ? 'timeout' : 'error')
+    } finally {
+      window.turnstile.reset(widget.current) // tokens are single-use
     }
   }
   return <section id="contact" className="es-section">
@@ -299,6 +320,10 @@ function Contact({ onSent }) {
         <Input label="Email" name="email" maxLength={254} type="email" placeholder="voce@email.com" autoComplete="email" value={f.email} error={err.email} onChange={set('email')} />
         <div style={{ gridColumn: '1/-1' }}><Select label="Assunto" name="subject" options={SUBJECTS} value={f.subject} onChange={set('subject')} /></div>
         <div style={{ gridColumn: '1/-1' }}><Textarea label="Mensagem" name="msg" maxLength={5000} placeholder="Conte sobre sua quest…" value={f.msg} error={err.msg} onChange={set('msg')} /></div>
+        <div style={{ gridColumn: '1/-1' }}>
+          <div ref={captcha} />
+          {err.captcha && <p role="alert" className="es-help es-help--error" style={{ fontSize: 14 }}>{err.captcha}</p>}
+        </div>
         {SEND_ERRORS[status] && <p role="alert" className="es-help es-help--error" style={{ gridColumn: '1/-1', fontSize: 14 }}>{SEND_ERRORS[status]} Sua mensagem continua aqui; se preferir, escreva direto para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>}
         <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span className="es-cv" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-3)' }}>Currículo: <a href={CV_PT} download>Português</a> · <a href={CV_EN} download>English</a></span>
@@ -349,7 +374,7 @@ export default function App() {
     {!started && <StartScreen onPress={enter} onStart={start} />}
     <NavBar links={[{ label: 'Sobre', href: 'about' }, { label: 'Quests', href: 'quests' }, { label: 'Contato', href: 'contact' }]} active={active} onNavigate={go}
       actions={<><IconButton variant="ghost" size="sm" icon={theme === 'dark' ? 'sun' : 'moon'} label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /><Button size="sm" onClick={() => go('contact')}>Contratar</Button></>} />
-    <main><Hero onNav={go} entered={entered} /><About /><Quests /><Contact onSent={() => setToasts(t => [...t, Date.now()])} /></main>
+    <main><Hero onNav={go} entered={entered} /><About /><Quests /><Contact theme={theme} onSent={() => setToasts(t => [...t, Date.now()])} /></main>
     <Footer />
     <div className="es-toast-stack">{toasts.map(id => <ToastItem key={id} id={id} onDone={dropToast} />)}</div>
   </>
