@@ -253,7 +253,7 @@ function Quests() {
 
 const FORMSPREE = 'https://formspree.io/f/myekapka'
 const EMAIL = 'eduardomssousa@hotmail.com'
-// Cloudflare test key (always passes). Swap for the real site key; the secret goes in Formspree's form settings.
+// Turnstile site key; the secret lives in Formspree's form settings.
 const TURNSTILE_KEY = '0x4AAAAAAFi77z9ISDARxUad'
 let turnstileLoad
 const loadTurnstile = () => turnstileLoad ??= new Promise((ok, fail) => {
