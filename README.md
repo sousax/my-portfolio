@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# my-portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Portfólio pessoal de Eduardo Sousa, com visual inspirado em jogos (tela de start, "quests", barras de status).
 
-Currently, two official plugins are available:
+No ar em **https://eduardomssousa.com.br**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Funcionalidades
 
-## React Compiler
+- Textos em português e inglês: escolhe pelo idioma do navegador e o botão PT/EN troca e lembra a escolha.
+- Tema claro e escuro, salvo no navegador.
+- Projetos ("Quests") e estatísticas de linguagens carregados ao vivo da API do GitHub (`sousax`), com cache de 10 minutos na sessão. Só entram os repositórios com o tópico `portfolio`; sem nenhum marcado, aparecem os 6 mais recentes com descrição.
+- Capturas de tela em `src/assets/quests/<repo>.webp`; sem arquivo, usa uma captura da homepage do projeto via thum.io.
+- Formulário de contato via Formspree, protegido por Cloudflare Turnstile.
+- Currículo para download em português e inglês (`public/`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tecnologias
 
-## Expanding the ESLint configuration
+- React 19 + Vite
+- TypeScript (entrada) e JSX, CSS próprio (`src/components.css`, `src/index.css`)
+- GitHub Pages (deploy via GitHub Actions, domínio próprio em `CNAME`)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Como rodar
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Requer Node 22 (mesma versão do workflow de deploy).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev       # servidor de desenvolvimento
+npm run build     # tsc -b && vite build -> dist/
+npm run preview   # serve o build localmente
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Deploy
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Todo push na `main` dispara `.github/workflows/deploy.yml`, que roda `npm ci && npm run build` e publica `dist/` no GitHub Pages.
